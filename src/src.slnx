@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="D:/lifelong-learning/Code/Project/SpaceShopper/src/SpaceShopper.API/SpaceShopper.API.csproj" />
+  <Project Path="D:/lifelong-learning/Code/Project/SpaceShopper/src/SpaceShopper.Application/SpaceShopper.Application.csproj" />
+  <Project Path="D:/lifelong-learning/Code/Project/SpaceShopper/src/SpaceShopper.Domain/SpaceShopper.Domain.csproj" />
+  <Project Path="D:/lifelong-learning/Code/Project/SpaceShopper/src/SpaceShopper.Infrastructure/SpaceShopper.Infrastructure.csproj" />
+</Solution>
