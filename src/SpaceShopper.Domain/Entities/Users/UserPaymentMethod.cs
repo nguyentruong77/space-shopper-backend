@@ -1,12 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SpaceShopper.Domain.Common;
 
 namespace SpaceShopper.Domain.Entities.Users
 {
-    internal class UserPaymentMethod
+    public class UserPaymentMethod : BaseEntity
     {
+        public Guid UserId { get; set; }
+        public string CardName { get; set; }
+        public string CardNumber { get; set; }
+        public string ExpirationDate { get; set; }
+        public string Cvv { get; set; }
+        public string Type { get; set; }
+        public bool Default { get; set; }
     }
 }

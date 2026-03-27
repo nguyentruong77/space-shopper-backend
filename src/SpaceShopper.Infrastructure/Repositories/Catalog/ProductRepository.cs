@@ -1,35 +1,76 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SpaceShopper.Application.Interfaces.IRepositories.Catalog;
+using SpaceShopper.Application.Requests.Catalog;
 using SpaceShopper.Domain.Entities.Catalog;
-using SpaceShopper.Infrastructure.Persistence.Catalog;
+using SpaceShopper.Infrastructure.Common;
+using SpaceShopper.Infrastructure.Data;
 
 namespace SpaceShopper.Infrastructure.Repositories.Catalog
 {
-    public class ProductRepository : IProductRepository
+    public class ProductRepository(SpaceShopperDbContext context) : Repository<Product>(context), IProductRepository
     {
-        private readonly CatalogDbContext _context;
-        public  ProductRepository(CatalogDbContext context)
+        public async Task<bool> IsExistAsync(long id, CancellationToken cancellationToken = default)
         {
-            _context = context;
-        }
-        public async Task AddAsync(Product product)
-        {
-            await _context.Products.AddAsync(product);
+            return await context.Products.AsNoTracking().AnyAsync(e => e.IdClone == id, cancellationToken);
         }
 
-        public async Task AddRangeAsync(IEnumerable<Product> products)
+        public async Task<List<Product>> GetListProductByQueryAsync(ProductSearchRequest request, CancellationToken cancellationToken = default)
         {
-            await _context.Products.AddRangeAsync(products);
-        }
+            var query = context.Products
+                .AsNoTracking()
+                .Include(p => p.ProductImages)
+                .Include(p => p.ProductStock)
+                .Include(p => p.ProductReviews)
+                .AsQueryable();
 
-        public async Task<bool> ExistsByExternalIdAsync(long id)
-        {
-            return await _context.Products.AnyAsync(p => p.idClone == id);
-        }
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            {
+                var keyword = request.Keyword.Trim().ToLower();
+                query = query.Where(p =>
+                    p.Name.ToLower().Contains(keyword) ||
+                    (p.Description != null && p.Description.ToLower().Contains(keyword)));
+            }
 
-        public async Task SaveChangesAsync()
-        {
-            await _context.SaveChangesAsync();
+            if (request.CategoryId.HasValue)
+            {
+                query = query.Where(p => p.CategoryId == request.CategoryId.Value);
+            }
+
+            if (request.MinPrice.HasValue)
+            {
+                query = query.Where(p => p.RealPrice >= request.MinPrice.Value);
+            }
+
+            if (request.MaxPrice.HasValue)
+            {
+                query = query.Where(p => p.RealPrice <= request.MaxPrice.Value);
+            }
+
+            if (request.FilterRating.HasValue)
+            {
+                query = query.Where(p => p.RatingAverage >= request.FilterRating.Value);
+            }
+
+            query = request.Sort switch
+            {
+                ProductSort.PriceAsc => query.OrderBy(p => p.RealPrice),
+                ProductSort.PriceDesc => query.OrderByDescending(p => p.RealPrice),
+                ProductSort.DiscountDesc => query.OrderByDescending(p => p.DiscountRate),
+                ProductSort.RatingDesc => query.OrderByDescending(p => p.RatingAverage),
+                _ => query.OrderByDescending(p => p.CreatedOn)
+            };
+
+            if (request.PageIndex > 0 && request.PageSize > 0)
+            {
+                var skip = (request.PageIndex - 1) * request.PageSize;
+                query = query.Skip(skip).Take(request.PageSize);
+            }
+            else
+            {
+                query = query.Take(15);
+            }
+
+            return await query.ToListAsync(cancellationToken);
         }
     }
 }

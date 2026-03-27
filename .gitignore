@@ -166,6 +166,12 @@ coverage*.info
 *.coverage
 *.coveragexml
 
+EfCommand.md
+ErrorInfo.docx
+noteLearning.md
+Docs/
+.cursor/
+
 # NCrunch
 _NCrunch_*
 .NCrunch_*
@@ -421,3 +427,4 @@ FodyWeavers.xsd
 appsettings.json
 appsettings.Development.json
 appsettings.Production.json
+

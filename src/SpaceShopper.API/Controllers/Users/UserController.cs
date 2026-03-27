@@ -1,0 +1,167 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using SpaceShopper.API.Models;
+using SpaceShopper.Application.Dtos.Auth;
+using SpaceShopper.Application.Dtos.Users;
+using SpaceShopper.Application.Interfaces.Iservices.Users;
+using SpaceShopper.Application.Requests.Users;
+
+namespace SpaceShopper.API.Controllers.Users
+{
+    [ApiController]
+    [Route("api/v1/users")]
+    public sealed class UserController(IUserService userService) : ControllerBase
+    {
+        private readonly IUserService _userService = userService;
+
+        [HttpPost("register")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
+        {
+            await _userService.RegisterAsync(request, cancellationToken);
+            return Ok(ApiResponse<object>.Ok(new { message = "Register request accepted." }));
+        }
+
+        [HttpPost("resend-email")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResendEmail([FromBody] ResendEmailRequest request, CancellationToken cancellationToken)
+        {
+            await _userService.ResendEmailAsync(request, cancellationToken);
+            return Ok(ApiResponse<object>.Ok(new { message = "Verification email resent." }));
+        }
+
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+        {
+            await _userService.ResetPasswordAsync(request, cancellationToken);
+            return Ok(ApiResponse<object>.Ok(new { message = "Reset email sent." }));
+        }
+
+        [HttpPost("change-password-by-code")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ChangePasswordByCode([FromBody] ChangePasswordByCodeRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _userService.ChangePasswordByCodeAsync(request, cancellationToken);
+            return Ok(ApiResponse<AuthTokenResponse>.Ok(result));
+        }
+
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken cancellationToken)
+        {
+            await _userService.ChangePasswordAsync(GetCurrentUserId(), request, cancellationToken);
+            return Ok(ApiResponse<object>.Ok(new { message = "Password changed successfully." }));
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetInfo(CancellationToken cancellationToken)
+        {
+            var user = await _userService.GetInfoAsync(GetCurrentUserId(), cancellationToken);
+            return Ok(ApiResponse<UserInfoDto>.Ok(user));
+        }
+
+        [HttpPatch]
+        [Authorize]
+        public async Task<IActionResult> UpdateInfo([FromBody] UpdateUserInfoRequest request, CancellationToken cancellationToken)
+        {
+            var user = await _userService.UpdateInfoAsync(GetCurrentUserId(), request, cancellationToken);
+            return Ok(ApiResponse<UserInfoDto>.Ok(user));
+        }
+
+        [HttpGet("address")]
+        [Authorize]
+        public async Task<IActionResult> GetAddresses([FromQuery(Name = "default")] bool? isDefault, CancellationToken cancellationToken)
+        {
+            var addresses = await _userService.GetAddressesAsync(GetCurrentUserId(), isDefault, cancellationToken);
+            return Ok(ApiResponse<IReadOnlyList<UserAddressDto>>.Ok(addresses));
+        }
+
+        [HttpGet("address/{id:guid}")]
+        [Authorize]
+        public async Task<IActionResult> GetAddressById([FromRoute] Guid id, CancellationToken cancellationToken)
+        {
+            var address = await _userService.GetAddressByIdAsync(GetCurrentUserId(), id, cancellationToken);
+            return Ok(ApiResponse<UserAddressDto>.Ok(address));
+        }
+
+        [HttpPost("address")]
+        [Authorize]
+        public async Task<IActionResult> AddAddress([FromBody] AddAddressRequest request, CancellationToken cancellationToken)
+        {
+            var address = await _userService.AddAddressAsync(GetCurrentUserId(), request, cancellationToken);
+            return Ok(ApiResponse<UserAddressDto>.Ok(address));
+        }
+
+        [HttpPatch("address/{id:guid}")]
+        [Authorize]
+        public async Task<IActionResult> EditAddress([FromRoute] Guid id, [FromBody] EditAddressRequest request, CancellationToken cancellationToken)
+        {
+            var address = await _userService.EditAddressAsync(GetCurrentUserId(), id, request, cancellationToken);
+            return Ok(ApiResponse<UserAddressDto>.Ok(address));
+        }
+
+        [HttpDelete("address/{id:guid}")]
+        [Authorize]
+        public async Task<IActionResult> RemoveAddress([FromRoute] Guid id, CancellationToken cancellationToken)
+        {
+            await _userService.RemoveAddressAsync(GetCurrentUserId(), id, cancellationToken);
+            return Ok(ApiResponse<object>.Ok(new { deleted = true }));
+        }
+
+        [HttpGet("payment")]
+        [Authorize]
+        public async Task<IActionResult> GetPayments(CancellationToken cancellationToken)
+        {
+            var payments = await _userService.GetPaymentsAsync(GetCurrentUserId(), cancellationToken);
+            return Ok(ApiResponse<IReadOnlyList<UserPaymentDto>>.Ok(payments));
+        }
+
+        [HttpGet("payment/{id:guid}")]
+        [Authorize]
+        public async Task<IActionResult> GetPaymentById([FromRoute] Guid id, CancellationToken cancellationToken)
+        {
+            var payment = await _userService.GetPaymentByIdAsync(GetCurrentUserId(), id, cancellationToken);
+            return Ok(ApiResponse<UserPaymentDto>.Ok(payment));
+        }
+
+        [HttpPost("payment")]
+        [Authorize]
+        public async Task<IActionResult> AddPayment([FromBody] AddPaymentRequest request, CancellationToken cancellationToken)
+        {
+            var payment = await _userService.AddPaymentAsync(GetCurrentUserId(), request, cancellationToken);
+            return Ok(ApiResponse<UserPaymentDto>.Ok(payment));
+        }
+
+        [HttpPatch("payment/{id:guid}")]
+        [Authorize]
+        public async Task<IActionResult> EditPayment([FromRoute] Guid id, [FromBody] EditPaymentRequest request, CancellationToken cancellationToken)
+        {
+            var payment = await _userService.EditPaymentAsync(GetCurrentUserId(), id, request, cancellationToken);
+            return Ok(ApiResponse<UserPaymentDto>.Ok(payment));
+        }
+
+        [HttpDelete("payment/{id:guid}")]
+        [Authorize]
+        public async Task<IActionResult> RemovePayment([FromRoute] Guid id, CancellationToken cancellationToken)
+        {
+            await _userService.RemovePaymentAsync(GetCurrentUserId(), id, cancellationToken);
+            return Ok(ApiResponse<object>.Ok(new { deleted = true }));
+        }
+
+        private Guid GetCurrentUserId()
+        {
+            var userId = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var id))
+            {
+                throw new SpaceShopper.Application.Common.Exceptions.UnauthorizedException(
+                    SpaceShopper.Application.Common.Errors.ErrorCodes.Auth.Unauthorized,
+                    SpaceShopper.Application.Common.Errors.ErrorMessages.Auth.Unauthorized);
+            }
+
+            return id;
+        }
+    }
+}

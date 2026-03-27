@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SpaceShopper.Domain.Entities.Catalog
+﻿namespace SpaceShopper.Domain.Entities.Catalog
 {
     public class ProductStock
     {
+        public Guid ProductId { get; set; }
+        public int Quantity { get; set; }
+        public int MinSaleQty { get; set; }
+        public int MaxSaleQty { get; set; }
+        public bool PreOrder { get; set; }
     }
 }

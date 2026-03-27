@@ -1,12 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SpaceShopper.Domain.Common;
 
 namespace SpaceShopper.Domain.Entities.Users
 {
-    internal class UserToken
+    public class UserToken : BaseEntity
     {
+        public Guid UserId { get; set; }
+        public int TokenVersion { get; set; }
+        public string RefreshToken { get; set; }
+        public DateTime ExpiresAt { get; set; }
+
+        public bool IsExpired(DateTime now) => ExpiresAt <= now;
     }
 }

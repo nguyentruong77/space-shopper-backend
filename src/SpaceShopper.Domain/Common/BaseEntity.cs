@@ -1,12 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SpaceShopper.Domain.Common
+﻿namespace SpaceShopper.Domain.Common
 {
-    internal class BaseEntity
+    public abstract class BaseEntity
     {
+        public Guid Id { get; private set; }
+
+        public BaseEntity()
+        {
+            Id = Guid.NewGuid();
+        }
+
+        public BaseEntity(Guid id)
+        {
+            Id = id;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is not BaseEntity other)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            return Id == other.Id;
+        }
+
+        public override int GetHashCode()
+            => Id.GetHashCode();
     }
 }

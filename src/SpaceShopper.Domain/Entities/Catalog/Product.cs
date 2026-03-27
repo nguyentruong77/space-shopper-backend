@@ -1,35 +1,24 @@
-﻿using SpaceShopper.Domain.ValueObjects;
+﻿using SpaceShopper.Domain.Common;
 
 namespace SpaceShopper.Domain.Entities.Catalog
 {
-    public class Product
+    public class Product : SoftDeletableAggregateRoot
     {
-        public Guid id { get; set; } = Guid.NewGuid();
-        public long idClone { get; set; }
+        public Guid CategoryId { get; set; }
+        public long IdClone { get; set; }
         public string Name { get; set; }
-        public string Slug { get; set; }
+        public string? Slug { get; set; }
+        public string? ShortDescription { get; set; }
         public string? Description { get; set; }
-        public Money Price { get; set; }
-        public Money? RealPrice { get; set; }
-        public decimal? PriceUsd { get; set; }
+        public decimal Price { get; set; }
+        public decimal RealPrice { get; set; }
+        public decimal DiscountRate { get; set; }
         public decimal RatingAverage { get; set; }
         public int ReviewCount { get; set; }
-        private Product() {}
-
-        public static Product Create(long idClone, string name, Money price, Money realPrice, string description, string slug)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Name is required");
-
-            return new Product
-            {
-                Name = name,
-                Description = description,
-                Price = price,
-                RealPrice = realPrice,
-                idClone = idClone,
-                Slug = slug
-            };
-        }
+        public string? ThumbnailUrl { get; set; }
+        public ICollection<ProductImage> ProductImages { get; set; } = new List<ProductImage>();
+        public ProductStock ProductStock { get; set; }
+        public ICollection<ProductReview> ProductReviews { get; set; } = new List<ProductReview>();
+        public Category Category { get; set; }
     }
 }

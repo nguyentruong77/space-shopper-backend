@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SpaceShopper.Domain.Enums
+﻿namespace SpaceShopper.Domain.Enums
 {
-    internal class OrderStatus
+    public enum OrderStatus
     {
+        Pending = 0,
+        Confirmed = 1,
+        Shipping = 2,
+        Finished = 3,
+        Cancelled = 4
     }
 }
