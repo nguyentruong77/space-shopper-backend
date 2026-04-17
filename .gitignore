@@ -423,8 +423,7 @@ FodyWeavers.xsd
 *.msm
 *.msp
 
-
-appsettings.json
-appsettings.Development.json
-appsettings.Production.json
+# ASP.NET Core appsettings (often contain secrets; use appsettings.example.json in repo)
+**/appsettings.json
+**/appsettings.*.json
 

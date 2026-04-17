@@ -51,6 +51,7 @@ builder.Services.AddRedisCaching(builder.Configuration);
 
 // Authentication & Authorization (JWT)
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
 
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
                  ?? throw new InvalidOperationException("Jwt configuration section is missing or invalid.");
@@ -92,7 +93,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
-builder.Services.AddScoped<IEmailService, EmailServiceStub>();
+builder.Services.AddScoped<IEmailService, MailKitEmailService>();
 
 builder.Services.AddHttpClient<DevService>(client =>
 {

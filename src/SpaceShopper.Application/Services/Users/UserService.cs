@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using AutoMapper;
+using SpaceShopper.Application.Common.Email;
 using SpaceShopper.Application.Common.Errors;
 using SpaceShopper.Application.Common.Exceptions;
 using SpaceShopper.Application.Common.Settings;
@@ -61,7 +62,12 @@ namespace SpaceShopper.Application.Services.Users
             };
 
             await _cacheService.SetAsync(RegisterCodeCacheKey(code), pending, TimeSpan.FromMinutes(15), cancellationToken: cancellationToken);
-            await _emailService.SendAsync(email, "Verify your account", $"Your verification code: {code}", cancellationToken);
+            await _emailService.SendAsync(
+                email,
+                "Verify your account",
+                $"Your verification code: {code}",
+                EmailTemplateKind.Verification,
+                cancellationToken);
             _logger.LogInformation("Register pending created for email {Email}", email);
         }
 
@@ -86,7 +92,12 @@ namespace SpaceShopper.Application.Services.Users
             };
 
             await _cacheService.SetAsync(RegisterCodeCacheKey(code), pending, TimeSpan.FromMinutes(15), cancellationToken: cancellationToken);
-            await _emailService.SendAsync(email, "Resend verification", $"Your verification code: {code}", cancellationToken);
+            await _emailService.SendAsync(
+                email,
+                "Resend verification",
+                $"Your verification code: {code}",
+                EmailTemplateKind.ResendVerification,
+                cancellationToken);
         }
 
         public async Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default)
@@ -102,7 +113,12 @@ namespace SpaceShopper.Application.Services.Users
 
             var code = Guid.NewGuid().ToString("N");
             await _cacheService.SetAsync(ResetCodeCacheKey(code), user.Id, TimeSpan.FromMinutes(15), cancellationToken: cancellationToken);
-            await _emailService.SendAsync(email, "Reset password", $"Your reset code: {code}", cancellationToken);
+            await _emailService.SendAsync(
+                email,
+                "Reset password",
+                $"Your reset code: {code}",
+                EmailTemplateKind.PasswordReset,
+                cancellationToken);
         }
 
         public async Task<AuthTokenResponse> ChangePasswordByCodeAsync(ChangePasswordByCodeRequest request, CancellationToken cancellationToken = default)

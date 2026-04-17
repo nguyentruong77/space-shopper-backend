@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using SpaceShopper.Application.Common.Email;
 using SpaceShopper.Application.Interfaces.Iservices.Common;
 
 namespace SpaceShopper.Infrastructure.Services.Email
@@ -7,9 +8,18 @@ namespace SpaceShopper.Infrastructure.Services.Email
     {
         private readonly ILogger<EmailServiceStub> _logger = logger;
 
-        public Task SendAsync(string toEmail, string subject, string body, CancellationToken cancellationToken = default)
+        public Task SendAsync(
+            string toEmail,
+            string subject,
+            string body,
+            EmailTemplateKind templateKind = EmailTemplateKind.None,
+            CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Email stub sent to {ToEmail}. Subject: {Subject}.", toEmail, subject);
+            _logger.LogInformation(
+                "Email stub sent to {ToEmail}. Subject: {Subject}. Template: {Template}.",
+                toEmail,
+                subject,
+                templateKind);
             return Task.CompletedTask;
         }
     }
