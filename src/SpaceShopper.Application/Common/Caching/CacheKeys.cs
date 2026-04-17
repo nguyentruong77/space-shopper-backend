@@ -49,5 +49,8 @@ namespace SpaceShopper.Application.Common.Caching
 
             return $"{typeof(TEntity).Name.ToLowerInvariant()}{Separator}query{Separator}{typeof(T).Name.ToLowerInvariant()}{Separator}{queryString}";
         }
+
+        public static string CatalogProductsSearch(string queryHash)
+            => $"catalog{Separator}products{Separator}search{Separator}{queryHash}";
     }
 }

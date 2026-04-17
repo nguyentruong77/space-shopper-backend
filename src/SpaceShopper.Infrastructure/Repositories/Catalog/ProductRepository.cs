@@ -14,7 +14,7 @@ namespace SpaceShopper.Infrastructure.Repositories.Catalog
             return await context.Products.AsNoTracking().AnyAsync(e => e.IdClone == id, cancellationToken);
         }
 
-        public async Task<List<Product>> GetListProductByQueryAsync(ProductSearchRequest request, CancellationToken cancellationToken = default)
+        public async Task<(IReadOnlyList<Product> Items, int TotalItems)> GetListProductByQueryAsync(ProductSearchRequest request, CancellationToken cancellationToken = default)
         {
             var query = context.Products
                 .AsNoTracking()
@@ -46,23 +46,24 @@ namespace SpaceShopper.Infrastructure.Repositories.Catalog
                 query = query.Where(p => p.RealPrice <= request.MaxPrice.Value);
             }
 
-            if (request.FilterRating.HasValue)
+            if (request.Rating.HasValue)
             {
-                query = query.Where(p => p.RatingAverage >= request.FilterRating.Value);
+                query = query.Where(p => p.RatingAverage >= (decimal)request.Rating.Value);
             }
 
-            query = request.Sort switch
+            var totalItems = await query.CountAsync(cancellationToken);
+
+            query = request.NormalizeSortValue() switch
             {
-                ProductSort.PriceAsc => query.OrderBy(p => p.RealPrice),
-                ProductSort.PriceDesc => query.OrderByDescending(p => p.RealPrice),
-                ProductSort.DiscountDesc => query.OrderByDescending(p => p.DiscountRate),
-                ProductSort.RatingDesc => query.OrderByDescending(p => p.RatingAverage),
+                "price_asc" => query.OrderBy(p => p.RealPrice),
+                "price_desc" => query.OrderByDescending(p => p.RealPrice),
+                "rating_desc" => query.OrderByDescending(p => p.RatingAverage),
                 _ => query.OrderByDescending(p => p.CreatedOn)
             };
 
-            if (request.PageIndex > 0 && request.PageSize > 0)
+            if (request.Page > 0 && request.PageSize > 0)
             {
-                var skip = (request.PageIndex - 1) * request.PageSize;
+                var skip = (request.Page - 1) * request.PageSize;
                 query = query.Skip(skip).Take(request.PageSize);
             }
             else
@@ -70,7 +71,8 @@ namespace SpaceShopper.Infrastructure.Repositories.Catalog
                 query = query.Take(15);
             }
 
-            return await query.ToListAsync(cancellationToken);
+            var items = await query.ToListAsync(cancellationToken);
+            return (items, totalItems);
         }
     }
 }

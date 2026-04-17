@@ -18,15 +18,23 @@ namespace SpaceShopper.API.Controllers.Dev
         public async Task<IActionResult> ImportProducts()
         {
             var result = await _devService.ImportProductAsync();
+            if (!result)
+            {
+                return BadRequest(new { message = "Clone products failed." });
+            }
 
-            return Ok(result);
+            return Ok(new { message = "Clone products completed." });
         }
         [HttpGet("clone-categories")]
         public async Task<IActionResult> ImportCategories()
         {
             var result = await _devService.ImportCategoryAsync();
+            if (!result)
+            {
+                return BadRequest(new { message = "Clone categories failed." });
+            }
 
-            return Ok(result);
+            return Ok(new { message = "Clone categories completed." });
         }
     }
 }

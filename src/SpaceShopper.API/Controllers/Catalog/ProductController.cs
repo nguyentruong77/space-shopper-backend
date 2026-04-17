@@ -1,23 +1,26 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SpaceShopper.API.Controllers.Common;
-using SpaceShopper.Application.Interfaces.IRepositories.Catalog;
+using SpaceShopper.API.Models;
+using SpaceShopper.Application.Dtos.Catalog;
+using SpaceShopper.Application.Dtos.Common;
 using SpaceShopper.Application.Interfaces.Iservices.Catalog;
 using SpaceShopper.Application.Requests.Catalog;
 
 namespace SpaceShopper.API.Controllers.Catalog
 {
-    [Route("/api/v1/[controller]")]
-    public class ProductController(IProductService productService, IProductRepository productRepository) : BaseController
+    [ApiController]
+    [Route("api/v1/products")]
+    public sealed class ProductController(IProductService productService) : ControllerBase
     {
         private readonly IProductService _productService = productService;
-        private readonly IProductRepository _productRepository = productRepository;
+
         [AllowAnonymous]
-        [HttpGet("products")]
-        public async Task<IActionResult> SearchProducts([FromQuery] ProductSearchRequest query)
+        [HttpGet]
+        [ProducesResponseType(typeof(ApiResponse<PagedResult<ProductListItemDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SearchProducts([FromQuery] ProductSearchRequest query, CancellationToken cancellationToken)
         {
-            var result = 1;//await _productService.SearchAsync(query);
-            return Ok(result);
+            var result = await _productService.SearchAsync(query, cancellationToken);
+            return Ok(ApiResponse<PagedResult<ProductListItemDto>>.Ok(result));
         }
     }
 }

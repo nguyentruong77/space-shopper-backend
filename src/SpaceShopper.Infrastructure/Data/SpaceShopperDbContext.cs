@@ -203,7 +203,7 @@ namespace SpaceShopper.Infrastructure.Data
             modelBuilder.Entity<UserToken>(entity =>
             {
                 entity.ToTable("UserToken");
-                entity.HasKey(e => e.UserId);
+                entity.HasKey(e => e.Id);
             });
 
             // WishlistItem entity configuration

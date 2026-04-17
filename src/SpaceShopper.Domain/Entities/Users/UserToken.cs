@@ -8,7 +8,8 @@ namespace SpaceShopper.Domain.Entities.Users
         public int TokenVersion { get; set; }
         public string RefreshToken { get; set; }
         public DateTime ExpiresAt { get; set; }
-
+        public bool IsRevoked { get; set; } = false;
+        
         public bool IsExpired(DateTime now) => ExpiresAt <= now;
     }
 }

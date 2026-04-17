@@ -8,9 +8,25 @@ namespace SpaceShopper.Infrastructure.Data
     {
         public SpaceShopperDbContext CreateDbContext(string[] args)
         {
-            var config = new ConfigurationBuilder().SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../SpaceShopper.API")).AddJsonFile("appsettings.json").Build();
+            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+            var apiProjectPath = Path.Combine(Directory.GetCurrentDirectory(), "../SpaceShopper.API");
 
-            var optionsBuilder = new DbContextOptionsBuilder<SpaceShopperDbContext>().UseNpgsql(config.GetConnectionString("PostgresConnection"), b =>
+            var config = new ConfigurationBuilder()
+                .SetBasePath(apiProjectPath)
+                .AddJsonFile("appsettings.json", optional: false)
+                .AddJsonFile($"appsettings.{environment}.json", optional: true)
+                .AddEnvironmentVariables()
+                .Build();
+
+            var connectionString = config.GetConnectionString("PostgresConnection");
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidOperationException(
+                    "Missing 'ConnectionStrings:PostgresConnection'. " +
+                    "Set it in appsettings or environment variable 'ConnectionStrings__PostgresConnection'.");
+            }
+
+            var optionsBuilder = new DbContextOptionsBuilder<SpaceShopperDbContext>().UseNpgsql(connectionString, b =>
             {
                 b.MigrationsAssembly("SpaceShopper.Infrastructure");
                 b.MigrationsHistoryTable("__EFMigrationsHistory", "spaceshopper");

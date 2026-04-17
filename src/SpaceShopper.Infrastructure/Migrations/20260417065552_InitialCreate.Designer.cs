@@ -12,8 +12,8 @@ using SpaceShopper.Infrastructure.Data;
 namespace SpaceShopper.Infrastructure.Migrations
 {
     [DbContext(typeof(SpaceShopperDbContext))]
-    [Migration("20260116032149_spaceshopperdb_v1.1")]
-    partial class spaceshopperdb_v11
+    [Migration("20260417065552_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -131,6 +131,9 @@ namespace SpaceShopper.Infrastructure.Migrations
 
                     b.Property<int>("ReviewCount")
                         .HasColumnType("integer");
+
+                    b.Property<string>("ShortDescription")
+                        .HasColumnType("text");
 
                     b.Property<string>("Slug")
                         .HasColumnType("text");
@@ -553,6 +556,9 @@ namespace SpaceShopper.Infrastructure.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
+                    b.Property<int>("TokenVersion")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("text");
@@ -662,12 +668,15 @@ namespace SpaceShopper.Infrastructure.Migrations
 
             modelBuilder.Entity("SpaceShopper.Domain.Entities.Users.UserToken", b =>
                 {
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("RefreshToken")
                         .IsRequired()
@@ -676,7 +685,12 @@ namespace SpaceShopper.Infrastructure.Migrations
                     b.Property<int>("TokenVersion")
                         .HasColumnType("integer");
 
-                    b.HasKey("UserId");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("UserToken", "spaceshopper");
                 });
@@ -795,6 +809,15 @@ namespace SpaceShopper.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SpaceShopper.Domain.Entities.Users.UserToken", b =>
+                {
+                    b.HasOne("SpaceShopper.Domain.Entities.Users.User", null)
+                        .WithMany("UserTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SpaceShopper.Domain.Entities.Users.WishlistItem", b =>
                 {
                     b.HasOne("SpaceShopper.Domain.Entities.Users.User", null)
@@ -839,6 +862,8 @@ namespace SpaceShopper.Infrastructure.Migrations
                     b.Navigation("UserCarts");
 
                     b.Navigation("UserPaymentMethods");
+
+                    b.Navigation("UserTokens");
 
                     b.Navigation("WishlistItems");
                 });
