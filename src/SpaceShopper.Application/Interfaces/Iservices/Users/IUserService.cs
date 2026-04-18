@@ -23,5 +23,11 @@ namespace SpaceShopper.Application.Interfaces.Iservices.Users
         Task<UserPaymentDto> AddPaymentAsync(Guid userId, AddPaymentRequest request, CancellationToken cancellationToken = default);
         Task<UserPaymentDto> EditPaymentAsync(Guid userId, Guid paymentId, EditPaymentRequest request, CancellationToken cancellationToken = default);
         Task RemovePaymentAsync(Guid userId, Guid paymentId, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<WishlistItemDto>> GetWishlistAsync(Guid userId, CancellationToken cancellationToken = default);
+
+        Task<WishlistItemDto> AddWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default);
+
+        Task RemoveWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default);
     }
 }

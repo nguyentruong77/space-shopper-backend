@@ -151,6 +151,30 @@ namespace SpaceShopper.API.Controllers.Users
             return Ok(ApiResponse<object>.Ok(new { deleted = true }));
         }
 
+        [HttpGet("wishlist")]
+        [Authorize]
+        public async Task<IActionResult> GetWishlist(CancellationToken cancellationToken)
+        {
+            var items = await _userService.GetWishlistAsync(GetCurrentUserId(), cancellationToken);
+            return Ok(ApiResponse<IReadOnlyList<WishlistItemDto>>.Ok(items));
+        }
+
+        [HttpPost("wishlist/{productId:guid}")]
+        [Authorize]
+        public async Task<IActionResult> AddToWishlist([FromRoute] Guid productId, CancellationToken cancellationToken)
+        {
+            var item = await _userService.AddWishlistAsync(GetCurrentUserId(), productId, cancellationToken);
+            return Ok(ApiResponse<WishlistItemDto>.Ok(item));
+        }
+
+        [HttpDelete("wishlist/{productId:guid}")]
+        [Authorize]
+        public async Task<IActionResult> RemoveFromWishlist([FromRoute] Guid productId, CancellationToken cancellationToken)
+        {
+            await _userService.RemoveWishlistAsync(GetCurrentUserId(), productId, cancellationToken);
+            return Ok(ApiResponse<object>.Ok(new { deleteCount = 1 }));
+        }
+
         private Guid GetCurrentUserId()
         {
             var userId = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);

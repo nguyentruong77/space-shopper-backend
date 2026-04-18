@@ -7,6 +7,12 @@ namespace SpaceShopper.Application.Common.Errors
             public const string ProductNotFound = "Product not found.";
         }
 
+        public static class Wishlist
+        {
+            public const string ItemNotFound = "Product is not in the wishlist.";
+            public const string Duplicate = "Product is already in the wishlist.";
+        }
+
         public static class Category
         {
             public const string CategoryNotFound = "Category not found.";

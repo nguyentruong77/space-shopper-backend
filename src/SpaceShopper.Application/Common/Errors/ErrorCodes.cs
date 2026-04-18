@@ -23,6 +23,12 @@ namespace SpaceShopper.Application.Common.Errors
             public const string EmailInvalid = "USR-400-002";
         }
 
+        public static class Wishlist
+        {
+            public const string ItemNotFound = "WIS-404-001";
+            public const string Duplicate = "WIS-409-001";
+        }
+
         public static class Application
         {
             public const string Validation = "APP-400-001";

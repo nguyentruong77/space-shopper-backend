@@ -31,6 +31,10 @@ namespace SpaceShopper.Application.Common.Caching
         public static string ForRefreshToken(Guid userId)
             => $"user{Separator}{userId}{Separator}refresh_token";
 
+        /// <summary>Wishlist list cache per user. Pattern: users:{userId}:wishlist</summary>
+        public static string UsersWishlist(Guid userId)
+            => $"users{Separator}{userId}{Separator}wishlist";
+
         /// <summary>
         /// Key lưu tạm thông tin đăng ký cho flow login-by-code.
         /// Pattern: "auth:register-code:{code}"

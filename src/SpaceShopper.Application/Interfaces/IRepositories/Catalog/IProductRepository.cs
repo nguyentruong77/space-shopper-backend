@@ -9,5 +9,7 @@ namespace SpaceShopper.Application.Interfaces.IRepositories.Catalog
         Task<bool> IsExistAsync(long id, CancellationToken cancellationToken = default);
         Task<Product?> GetDetailByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<(IReadOnlyList<Product> Items, int TotalItems)> GetListProductByQueryAsync(ProductSearchRequest request, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<Product>> GetByIdsForWishlistAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default);
     }
 }

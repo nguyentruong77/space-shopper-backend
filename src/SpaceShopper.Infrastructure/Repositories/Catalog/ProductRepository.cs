@@ -3,6 +3,7 @@ using SpaceShopper.Application.Interfaces.IRepositories.Catalog;
 using SpaceShopper.Application.Requests.Catalog;
 using SpaceShopper.Domain.Entities.Catalog;
 using SpaceShopper.Infrastructure.Common;
+using SpaceShopper.Infrastructure.Common.Extensions;
 using SpaceShopper.Infrastructure.Data;
 
 namespace SpaceShopper.Infrastructure.Repositories.Catalog
@@ -83,6 +84,18 @@ namespace SpaceShopper.Infrastructure.Repositories.Catalog
 
             var items = await query.ToListAsync(cancellationToken);
             return (items, totalItems);
+        }
+
+        public async Task<IReadOnlyList<Product>> GetByIdsForWishlistAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default)
+        {
+            if (ids.Count == 0)
+            {
+                return Array.Empty<Product>();
+            }
+
+            return await context.Available<Product>()
+                .Where(p => ids.Contains(p.Id))
+                .ToListAsync(cancellationToken);
         }
     }
 }

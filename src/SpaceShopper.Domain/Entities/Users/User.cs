@@ -192,5 +192,30 @@ namespace SpaceShopper.Domain.Entities.Users
                 item.Default = item.Id == paymentId;
             }
         }
+
+        public WishlistItem AddToWishlist(Guid productId)
+        {
+            if (WishlistItems.Any(w => w.ProductId == productId))
+            {
+                throw new InvalidOperationException("Product is already in the wishlist.");
+            }
+
+            var item = new WishlistItem
+            {
+                UserId = Id,
+                ProductId = productId
+            };
+
+            WishlistItems.Add(item);
+            return item;
+        }
+
+        public void RemoveFromWishlist(Guid productId)
+        {
+            var existing = WishlistItems.FirstOrDefault(w => w.ProductId == productId)
+                ?? throw new KeyNotFoundException("Wishlist item was not found.");
+
+            WishlistItems.Remove(existing);
+        }
     }
 }

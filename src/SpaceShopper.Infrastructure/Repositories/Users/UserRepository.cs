@@ -54,6 +54,20 @@ namespace SpaceShopper.Infrastructure.Repositories.Users
                     u => u.UserTokens.Any(t => t.RefreshToken == refreshToken),
                     cancellationToken);
         }
+
+        public async Task<User?> GetByIdWithWishlistAsync(Guid id, bool asNoTracking, CancellationToken cancellationToken = default)
+        {
+            var query = _dbContext.Users
+                .Include(u => u.WishlistItems)
+                .Where(u => u.Id == id);
+
+            if (asNoTracking)
+            {
+                query = query.AsNoTracking();
+            }
+
+            return await query.FirstOrDefaultAsync(cancellationToken);
+        }
     }
 }
 
