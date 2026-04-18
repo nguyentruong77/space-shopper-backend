@@ -7,5 +7,6 @@ namespace SpaceShopper.Application.Interfaces.Iservices.Catalog
     public interface IProductService
     {
         Task<PagedResult<ProductListItemDto>> SearchAsync(ProductSearchRequest request, CancellationToken cancellationToken = default);
+        Task<ProductDetailDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     }
 }

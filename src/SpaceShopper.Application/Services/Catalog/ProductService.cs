@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Microsoft.Extensions.Logging;
 using SpaceShopper.Application.Common.Caching;
+using SpaceShopper.Application.Common.Errors;
+using SpaceShopper.Application.Common.Exceptions;
 using SpaceShopper.Application.Dtos.Catalog;
 using SpaceShopper.Application.Dtos.Common;
 using SpaceShopper.Application.Interfaces.Caching;
@@ -19,6 +21,7 @@ namespace SpaceShopper.Application.Services.Catalog
         ILogger<ProductService> logger) : IProductService
     {
         private static readonly TimeSpan SearchCacheTtl = TimeSpan.FromMinutes(3);
+        private static readonly TimeSpan ProductDetailCacheTtl = TimeSpan.FromMinutes(20);
         private readonly IProductRepository _productRepository = productRepository;
         private readonly ICacheService _cacheService = cacheService;
         private readonly ICacheKeyHashService _cacheKeyHashService = cacheKeyHashService;
@@ -88,6 +91,50 @@ namespace SpaceShopper.Application.Services.Catalog
                 {
                     _logger.LogWarning(ex, "Product search cache set failed.");
                 }
+            }
+
+            return result;
+        }
+
+        public async Task<ProductDetailDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var cacheKey = CacheKeys.CatalogProductDetail(id);
+            var cacheHit = false;
+            ProductDetailDto? cachedResult = null;
+
+            try
+            {
+                (cacheHit, cachedResult) = await _cacheService.TryGetValueAsync<ProductDetailDto>(cacheKey, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Product detail cache unavailable for ProductId: {ProductId}.", id);
+            }
+
+            if (cacheHit && cachedResult is not null)
+            {
+                _logger.LogInformation("Product detail cache hit for ProductId: {ProductId}", id);
+                return cachedResult;
+            }
+
+            _logger.LogInformation("Product detail cache miss for ProductId: {ProductId}", id);
+
+            var product = await _productRepository.GetDetailByIdAsync(id, cancellationToken);
+            if (product is null)
+            {
+                _logger.LogWarning("Product not found. ProductId: {ProductId}", id);
+                throw new NotFoundException(ErrorCodes.Application.NotFound, ErrorMessages.Product.ProductNotFound);
+            }
+
+            var result = _mapper.Map<ProductDetailDto>(product);
+
+            try
+            {
+                await _cacheService.SetAsync(cacheKey, result, ProductDetailCacheTtl, cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Product detail cache set failed for ProductId: {ProductId}.", id);
             }
 
             return result;

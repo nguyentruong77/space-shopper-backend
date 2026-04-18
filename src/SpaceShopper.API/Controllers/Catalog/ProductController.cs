@@ -22,5 +22,14 @@ namespace SpaceShopper.API.Controllers.Catalog
             var result = await _productService.SearchAsync(query, cancellationToken);
             return Ok(ApiResponse<PagedResult<ProductListItemDto>>.Ok(result));
         }
+
+        [AllowAnonymous]
+        [HttpGet("{id:guid}")]
+        [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetProductDetail([FromRoute] Guid id, CancellationToken cancellationToken)
+        {
+            var result = await _productService.GetByIdAsync(id, cancellationToken);
+            return Ok(ApiResponse<ProductDetailDto>.Ok(result));
+        }
     }
 }

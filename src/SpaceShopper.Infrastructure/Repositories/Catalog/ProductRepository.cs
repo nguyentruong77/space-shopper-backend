@@ -14,6 +14,16 @@ namespace SpaceShopper.Infrastructure.Repositories.Catalog
             return await context.Products.AsNoTracking().AnyAsync(e => e.IdClone == id, cancellationToken);
         }
 
+        public async Task<Product?> GetDetailByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await context.Products
+                .AsNoTracking()
+                .Include(p => p.ProductImages)
+                .Include(p => p.ProductStock)
+                .Include(p => p.ProductReviews)
+                .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+        }
+
         public async Task<(IReadOnlyList<Product> Items, int TotalItems)> GetListProductByQueryAsync(ProductSearchRequest request, CancellationToken cancellationToken = default)
         {
             var query = context.Products

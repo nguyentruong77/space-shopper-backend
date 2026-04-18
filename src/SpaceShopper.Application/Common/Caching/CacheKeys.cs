@@ -52,5 +52,8 @@ namespace SpaceShopper.Application.Common.Caching
 
         public static string CatalogProductsSearch(string queryHash)
             => $"catalog{Separator}products{Separator}search{Separator}{queryHash}";
+
+        public static string CatalogProductDetail(Guid id)
+            => $"catalog{Separator}products{Separator}{id}";
     }
 }
