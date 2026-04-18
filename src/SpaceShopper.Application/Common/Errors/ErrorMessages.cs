@@ -48,6 +48,8 @@ namespace SpaceShopper.Application.Common.Errors
         public static class Cart
         {
             public const string CartEmpty = "Cart is empty.";
+            public const string ItemNotFound = "Product is not in the cart.";
+            public const string InsufficientStock = "Insufficient stock for the requested quantity.";
         }
 
         public static class Common

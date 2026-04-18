@@ -217,5 +217,39 @@ namespace SpaceShopper.Domain.Entities.Users
 
             WishlistItems.Remove(existing);
         }
+
+        public void UpsertCartItem(Guid productId, int quantity)
+        {
+            if (quantity <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(quantity), "Cart line quantity must be positive.");
+            }
+
+            var now = DateTime.UtcNow;
+            var existing = UserCarts.FirstOrDefault(c => c.ProductId == productId);
+            if (existing is not null)
+            {
+                existing.Quantity = quantity;
+                existing.LastModifiedAt = now;
+            }
+            else
+            {
+                UserCarts.Add(new UserCart
+                {
+                    UserId = Id,
+                    ProductId = productId,
+                    Quantity = quantity,
+                    LastModifiedAt = now
+                });
+            }
+        }
+
+        public void RemoveCartItem(Guid productId)
+        {
+            var existing = UserCarts.FirstOrDefault(c => c.ProductId == productId)
+                ?? throw new KeyNotFoundException("Cart item was not found.");
+
+            UserCarts.Remove(existing);
+        }
     }
 }

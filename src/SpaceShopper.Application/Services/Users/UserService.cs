@@ -9,7 +9,6 @@ using SpaceShopper.Application.Common.Settings;
 using SpaceShopper.Application.Dtos.Auth;
 using SpaceShopper.Application.Dtos.Users;
 using SpaceShopper.Application.Interfaces.Caching;
-using SpaceShopper.Application.Interfaces.IRepositories.Catalog;
 using SpaceShopper.Application.Interfaces.IRepositories.Common;
 using SpaceShopper.Application.Interfaces.IRepositories.Users;
 using SpaceShopper.Application.Interfaces.Iservices.Common;
@@ -17,13 +16,11 @@ using SpaceShopper.Application.Interfaces.Iservices.Users;
 using SpaceShopper.Application.Interfaces.Security;
 using SpaceShopper.Application.Requests.Users;
 using SpaceShopper.Domain.Entities.Users;
-using SpaceShopper.Domain.Enums;
 
 namespace SpaceShopper.Application.Services.Users
 {
     public sealed class UserService(
         IUserRepository userRepository,
-        IProductRepository productRepository,
         IUnitOfWork unitOfWork,
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
@@ -33,10 +30,7 @@ namespace SpaceShopper.Application.Services.Users
         IOptions<JwtOptions> jwtOptions,
         ILogger<UserService> logger) : IUserService
     {
-        private static readonly TimeSpan WishlistCacheTtl = TimeSpan.FromMinutes(2);
-
         private readonly IUserRepository _userRepository = userRepository;
-        private readonly IProductRepository _productRepository = productRepository;
         private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IPasswordHasher _passwordHasher = passwordHasher;
         private readonly ITokenService _tokenService = tokenService;
@@ -195,280 +189,6 @@ namespace SpaceShopper.Application.Services.Users
             user.UpdateProfile(request.Name, request.Phone, request.Avatar, request.Fb, request.BirthDay, request.Gender);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<UserInfoDto>(user);
-        }
-
-        public async Task<IReadOnlyList<UserAddressDto>> GetAddressesAsync(Guid userId, bool? isDefault, CancellationToken cancellationToken = default)
-        {
-            var user = await _userRepository.GetByIdWithAddressesAsync(userId, cancellationToken)
-                ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-
-            var source = isDefault.HasValue ? user.UserAddresses.Where(x => x.Default == isDefault.Value) : user.UserAddresses;
-            return source.Select(x => _mapper.Map<UserAddressDto>(x)).ToList();
-        }
-
-        public async Task<UserAddressDto> GetAddressByIdAsync(Guid userId, Guid addressId, CancellationToken cancellationToken = default)
-        {
-            var user = await _userRepository.GetByIdWithAddressesAsync(userId, cancellationToken)
-                ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-
-            var address = user.UserAddresses.FirstOrDefault(x => x.Id == addressId)
-                ?? throw new NotFoundException(ErrorCodes.User.ChildEntityNotFound, ErrorMessages.User.ChildEntityNotFound);
-            return _mapper.Map<UserAddressDto>(address);
-        }
-
-        public async Task<UserAddressDto> AddAddressAsync(Guid userId, AddAddressRequest request, CancellationToken cancellationToken = default)
-        {
-            var user = await _userRepository.GetByIdWithAddressesAsync(userId, cancellationToken)
-                ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-
-            var address = new UserAddress
-            {
-                FullName = request.FullName,
-                Email = request.Email,
-                Phone = request.Phone,
-                Province = request.Province,
-                District = request.District,
-                Address = request.Address
-            };
-
-            var created = user.AddAddress(address, request.IsDefault);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return _mapper.Map<UserAddressDto>(created);
-        }
-
-        public async Task<UserAddressDto> EditAddressAsync(Guid userId, Guid addressId, EditAddressRequest request, CancellationToken cancellationToken = default)
-        {
-            var user = await _userRepository.GetByIdWithAddressesAsync(userId, cancellationToken)
-                ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-
-            try
-            {
-                var updated = user.UpdateAddress(addressId, request.FullName, request.Email, request.Phone, request.Province, request.District, request.Address, request.IsDefault);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-                return _mapper.Map<UserAddressDto>(updated);
-            }
-            catch (KeyNotFoundException)
-            {
-                throw new NotFoundException(ErrorCodes.User.ChildEntityNotFound, ErrorMessages.User.ChildEntityNotFound);
-            }
-        }
-
-        public async Task RemoveAddressAsync(Guid userId, Guid addressId, CancellationToken cancellationToken = default)
-        {
-            var user = await _userRepository.GetByIdWithAddressesAsync(userId, cancellationToken)
-                ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-
-            try
-            {
-                user.RemoveAddress(addressId);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-            }
-            catch (KeyNotFoundException)
-            {
-                throw new NotFoundException(ErrorCodes.User.ChildEntityNotFound, ErrorMessages.User.ChildEntityNotFound);
-            }
-            catch (InvalidOperationException)
-            {
-                throw new DomainException(ErrorCodes.User.DefaultEntityDeleteForbidden, ErrorMessages.User.DefaultEntityDeleteForbidden);
-            }
-        }
-
-        public async Task<IReadOnlyList<UserPaymentDto>> GetPaymentsAsync(Guid userId, CancellationToken cancellationToken = default)
-        {
-            var user = await _userRepository.GetByIdWithPaymentMethodsAsync(userId, cancellationToken)
-                ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-            return user.UserPaymentMethods.Select(x => _mapper.Map<UserPaymentDto>(x)).ToList();
-        }
-
-        public async Task<UserPaymentDto> GetPaymentByIdAsync(Guid userId, Guid paymentId, CancellationToken cancellationToken = default)
-        {
-            var user = await _userRepository.GetByIdWithPaymentMethodsAsync(userId, cancellationToken)
-                ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-
-            var payment = user.UserPaymentMethods.FirstOrDefault(x => x.Id == paymentId)
-                ?? throw new NotFoundException(ErrorCodes.User.ChildEntityNotFound, ErrorMessages.User.ChildEntityNotFound);
-            return _mapper.Map<UserPaymentDto>(payment);
-        }
-
-        public async Task<UserPaymentDto> AddPaymentAsync(Guid userId, AddPaymentRequest request, CancellationToken cancellationToken = default)
-        {
-            var user = await _userRepository.GetByIdWithPaymentMethodsAsync(userId, cancellationToken)
-                ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-
-            var payment = new UserPaymentMethod
-            {
-                CardName = request.CardName,
-                CardNumber = request.CardNumber,
-                Cvv = request.Cvv,
-                ExpirationDate = request.Expired,
-                Type = request.Type
-            };
-
-            var created = user.AddPaymentMethod(payment, request.IsDefault);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return _mapper.Map<UserPaymentDto>(created);
-        }
-
-        public async Task<UserPaymentDto> EditPaymentAsync(Guid userId, Guid paymentId, EditPaymentRequest request, CancellationToken cancellationToken = default)
-        {
-            var user = await _userRepository.GetByIdWithPaymentMethodsAsync(userId, cancellationToken)
-                ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-
-            try
-            {
-                var updated = user.UpdatePaymentMethod(paymentId, request.CardName, request.CardNumber, request.Expired, request.Type, request.IsDefault);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-                return _mapper.Map<UserPaymentDto>(updated);
-            }
-            catch (KeyNotFoundException)
-            {
-                throw new NotFoundException(ErrorCodes.User.ChildEntityNotFound, ErrorMessages.User.ChildEntityNotFound);
-            }
-        }
-
-        public async Task RemovePaymentAsync(Guid userId, Guid paymentId, CancellationToken cancellationToken = default)
-        {
-            var user = await _userRepository.GetByIdWithPaymentMethodsAsync(userId, cancellationToken)
-                ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-
-            try
-            {
-                user.RemovePaymentMethod(paymentId);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-            }
-            catch (KeyNotFoundException)
-            {
-                throw new NotFoundException(ErrorCodes.User.ChildEntityNotFound, ErrorMessages.User.ChildEntityNotFound);
-            }
-            catch (InvalidOperationException)
-            {
-                throw new DomainException(ErrorCodes.User.DefaultEntityDeleteForbidden, ErrorMessages.User.DefaultEntityDeleteForbidden);
-            }
-        }
-
-        public async Task<IReadOnlyList<WishlistItemDto>> GetWishlistAsync(Guid userId, CancellationToken cancellationToken = default)
-        {
-            var cacheKey = CacheKeys.UsersWishlist(userId);
-            var cacheUnavailable = false;
-            var cacheHit = false;
-            List<WishlistItemDto>? cached = null;
-
-            try
-            {
-                (cacheHit, cached) = await _cacheService.TryGetValueAsync<List<WishlistItemDto>>(cacheKey, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                cacheUnavailable = true;
-                _logger.LogWarning(ex, "Wishlist cache unavailable for user {UserId}, falling back to database.", userId);
-            }
-
-            if (cacheHit && cached is not null)
-            {
-                _logger.LogDebug("Wishlist cache hit for user {UserId}, item count {Count}", userId, cached.Count);
-                return cached;
-            }
-
-            _logger.LogDebug("Wishlist cache miss for user {UserId}", userId);
-
-            var user = await _userRepository.GetByIdWithWishlistAsync(userId, asNoTracking: true, cancellationToken)
-                ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-
-            var dtos = await BuildWishlistDtosAsync(user.WishlistItems, cancellationToken);
-
-            if (!cacheUnavailable)
-            {
-                try
-                {
-                    await _cacheService.SetAsync(cacheKey, dtos.ToList(), WishlistCacheTtl, cancellationToken: cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to set wishlist cache for user {UserId}", userId);
-                }
-            }
-
-            _logger.LogInformation("Wishlist loaded for user {UserId}, item count {Count}", userId, dtos.Count);
-            return dtos;
-        }
-
-        public async Task<WishlistItemDto> AddWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
-        {
-            var product = await _productRepository.GetByIdAsync(productId, cancellationToken)
-                ?? throw new NotFoundException(ErrorCodes.Application.NotFound, ErrorMessages.Product.ProductNotFound);
-
-            var user = await _userRepository.GetByIdWithWishlistAsync(userId, asNoTracking: false, cancellationToken)
-                ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-
-            try
-            {
-                var item = user.AddToWishlist(productId);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-                await InvalidateWishlistCacheAsync(userId, cancellationToken);
-
-                _logger.LogInformation("User {UserId} added product {ProductId} to wishlist", userId, productId);
-                return _mapper.Map<WishlistItemDto>((item, product));
-            }
-            catch (InvalidOperationException)
-            {
-                _logger.LogWarning("Duplicate wishlist add for user {UserId}, product {ProductId}", userId, productId);
-                throw new ValidationException(ErrorCodes.Wishlist.Duplicate, ErrorMessages.Wishlist.Duplicate);
-            }
-        }
-
-        public async Task RemoveWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default)
-        {
-            var user = await _userRepository.GetByIdWithWishlistAsync(userId, asNoTracking: false, cancellationToken)
-                ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-
-            try
-            {
-                user.RemoveFromWishlist(productId);
-            }
-            catch (KeyNotFoundException)
-            {
-                throw new NotFoundException(ErrorCodes.Wishlist.ItemNotFound, ErrorMessages.Wishlist.ItemNotFound);
-            }
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await InvalidateWishlistCacheAsync(userId, cancellationToken);
-            _logger.LogInformation("User {UserId} removed product {ProductId} from wishlist", userId, productId);
-        }
-
-        private async Task InvalidateWishlistCacheAsync(Guid userId, CancellationToken cancellationToken)
-        {
-            try
-            {
-                await _cacheService.RemoveAsync(CacheKeys.UsersWishlist(userId), cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to remove wishlist cache for user {UserId}", userId);
-            }
-        }
-
-        private async Task<IReadOnlyList<WishlistItemDto>> BuildWishlistDtosAsync(
-            ICollection<WishlistItem> wishlistItems,
-            CancellationToken cancellationToken)
-        {
-            var ids = wishlistItems.Select(w => w.ProductId).Distinct().ToList();
-            var products = await _productRepository.GetByIdsForWishlistAsync(ids, cancellationToken);
-            var byId = products.ToDictionary(p => p.Id);
-
-            var missing = ids.Count - byId.Count;
-            if (missing > 0)
-            {
-                _logger.LogWarning("Wishlist has {Missing} reference(s) to missing or deleted products", missing);
-            }
-
-            var ordered = wishlistItems
-                .Where(w => byId.ContainsKey(w.ProductId))
-                .OrderBy(w => byId[w.ProductId].Name)
-                .ToList();
-
-            return ordered
-                .Select(w => _mapper.Map<WishlistItemDto>((w, byId[w.ProductId])))
-                .ToList();
         }
 
         private static string ResolveEmail(string? email, string? usernameAlias)

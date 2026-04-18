@@ -68,6 +68,20 @@ namespace SpaceShopper.Infrastructure.Repositories.Users
 
             return await query.FirstOrDefaultAsync(cancellationToken);
         }
+
+        public async Task<User?> GetByIdWithCartAsync(Guid id, bool asNoTracking, CancellationToken cancellationToken = default)
+        {
+            var query = _dbContext.Users
+                .Include(u => u.UserCarts)
+                .Where(u => u.Id == id);
+
+            if (asNoTracking)
+            {
+                query = query.AsNoTracking();
+            }
+
+            return await query.FirstOrDefaultAsync(cancellationToken);
+        }
     }
 }
 

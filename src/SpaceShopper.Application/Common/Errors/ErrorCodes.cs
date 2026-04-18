@@ -29,6 +29,12 @@ namespace SpaceShopper.Application.Common.Errors
             public const string Duplicate = "WIS-409-001";
         }
 
+        public static class Cart
+        {
+            public const string ItemNotFound = "CRT-404-001";
+            public const string InsufficientStock = "CRT-400-001";
+        }
+
         public static class Application
         {
             public const string Validation = "APP-400-001";

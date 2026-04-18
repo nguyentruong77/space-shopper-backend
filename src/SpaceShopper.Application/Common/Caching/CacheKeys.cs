@@ -35,6 +35,10 @@ namespace SpaceShopper.Application.Common.Caching
         public static string UsersWishlist(Guid userId)
             => $"users{Separator}{userId}{Separator}wishlist";
 
+        /// <summary>Cart snapshot cache per user. Pattern: users:{userId}:cart</summary>
+        public static string UsersCart(Guid userId)
+            => $"users{Separator}{userId}{Separator}cart";
+
         /// <summary>
         /// Key lưu tạm thông tin đăng ký cho flow login-by-code.
         /// Pattern: "auth:register-code:{code}"

@@ -13,21 +13,5 @@ namespace SpaceShopper.Application.Interfaces.Iservices.Users
         Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken = default);
         Task<UserInfoDto> GetInfoAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<UserInfoDto> UpdateInfoAsync(Guid userId, UpdateUserInfoRequest request, CancellationToken cancellationToken = default);
-        Task<IReadOnlyList<UserAddressDto>> GetAddressesAsync(Guid userId, bool? isDefault, CancellationToken cancellationToken = default);
-        Task<UserAddressDto> GetAddressByIdAsync(Guid userId, Guid addressId, CancellationToken cancellationToken = default);
-        Task<UserAddressDto> AddAddressAsync(Guid userId, AddAddressRequest request, CancellationToken cancellationToken = default);
-        Task<UserAddressDto> EditAddressAsync(Guid userId, Guid addressId, EditAddressRequest request, CancellationToken cancellationToken = default);
-        Task RemoveAddressAsync(Guid userId, Guid addressId, CancellationToken cancellationToken = default);
-        Task<IReadOnlyList<UserPaymentDto>> GetPaymentsAsync(Guid userId, CancellationToken cancellationToken = default);
-        Task<UserPaymentDto> GetPaymentByIdAsync(Guid userId, Guid paymentId, CancellationToken cancellationToken = default);
-        Task<UserPaymentDto> AddPaymentAsync(Guid userId, AddPaymentRequest request, CancellationToken cancellationToken = default);
-        Task<UserPaymentDto> EditPaymentAsync(Guid userId, Guid paymentId, EditPaymentRequest request, CancellationToken cancellationToken = default);
-        Task RemovePaymentAsync(Guid userId, Guid paymentId, CancellationToken cancellationToken = default);
-
-        Task<IReadOnlyList<WishlistItemDto>> GetWishlistAsync(Guid userId, CancellationToken cancellationToken = default);
-
-        Task<WishlistItemDto> AddWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default);
-
-        Task RemoveWishlistAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default);
     }
 }

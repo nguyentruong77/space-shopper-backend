@@ -13,6 +13,8 @@ namespace SpaceShopper.Application.Interfaces.IRepositories.Users
         Task<User?> GetByRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default);
 
         Task<User?> GetByIdWithWishlistAsync(Guid id, bool asNoTracking, CancellationToken cancellationToken = default);
+
+        Task<User?> GetByIdWithCartAsync(Guid id, bool asNoTracking, CancellationToken cancellationToken = default);
     }
 }
 

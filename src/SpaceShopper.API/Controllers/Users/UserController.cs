@@ -11,9 +11,16 @@ namespace SpaceShopper.API.Controllers.Users
 {
     [ApiController]
     [Route("api/v1/users")]
-    public sealed class UserController(IUserService userService) : ControllerBase
+    public sealed class UserController(
+        IUserService userService,
+        IAddressService addressService,
+        IUserPaymentMethodService paymentMethodService,
+        IWishlistService wishlistService) : ControllerBase
     {
         private readonly IUserService _userService = userService;
+        private readonly IAddressService _addressService = addressService;
+        private readonly IUserPaymentMethodService _paymentMethodService = paymentMethodService;
+        private readonly IWishlistService _wishlistService = wishlistService;
 
         [HttpPost("register")]
         [AllowAnonymous]
@@ -75,7 +82,7 @@ namespace SpaceShopper.API.Controllers.Users
         [Authorize]
         public async Task<IActionResult> GetAddresses([FromQuery(Name = "default")] bool? isDefault, CancellationToken cancellationToken)
         {
-            var addresses = await _userService.GetAddressesAsync(GetCurrentUserId(), isDefault, cancellationToken);
+            var addresses = await _addressService.GetAddressesAsync(GetCurrentUserId(), isDefault, cancellationToken);
             return Ok(ApiResponse<IReadOnlyList<UserAddressDto>>.Ok(addresses));
         }
 
@@ -83,7 +90,7 @@ namespace SpaceShopper.API.Controllers.Users
         [Authorize]
         public async Task<IActionResult> GetAddressById([FromRoute] Guid id, CancellationToken cancellationToken)
         {
-            var address = await _userService.GetAddressByIdAsync(GetCurrentUserId(), id, cancellationToken);
+            var address = await _addressService.GetAddressByIdAsync(GetCurrentUserId(), id, cancellationToken);
             return Ok(ApiResponse<UserAddressDto>.Ok(address));
         }
 
@@ -91,7 +98,7 @@ namespace SpaceShopper.API.Controllers.Users
         [Authorize]
         public async Task<IActionResult> AddAddress([FromBody] AddAddressRequest request, CancellationToken cancellationToken)
         {
-            var address = await _userService.AddAddressAsync(GetCurrentUserId(), request, cancellationToken);
+            var address = await _addressService.AddAddressAsync(GetCurrentUserId(), request, cancellationToken);
             return Ok(ApiResponse<UserAddressDto>.Ok(address));
         }
 
@@ -99,7 +106,7 @@ namespace SpaceShopper.API.Controllers.Users
         [Authorize]
         public async Task<IActionResult> EditAddress([FromRoute] Guid id, [FromBody] EditAddressRequest request, CancellationToken cancellationToken)
         {
-            var address = await _userService.EditAddressAsync(GetCurrentUserId(), id, request, cancellationToken);
+            var address = await _addressService.EditAddressAsync(GetCurrentUserId(), id, request, cancellationToken);
             return Ok(ApiResponse<UserAddressDto>.Ok(address));
         }
 
@@ -107,7 +114,7 @@ namespace SpaceShopper.API.Controllers.Users
         [Authorize]
         public async Task<IActionResult> RemoveAddress([FromRoute] Guid id, CancellationToken cancellationToken)
         {
-            await _userService.RemoveAddressAsync(GetCurrentUserId(), id, cancellationToken);
+            await _addressService.RemoveAddressAsync(GetCurrentUserId(), id, cancellationToken);
             return Ok(ApiResponse<object>.Ok(new { deleted = true }));
         }
 
@@ -115,7 +122,7 @@ namespace SpaceShopper.API.Controllers.Users
         [Authorize]
         public async Task<IActionResult> GetPayments(CancellationToken cancellationToken)
         {
-            var payments = await _userService.GetPaymentsAsync(GetCurrentUserId(), cancellationToken);
+            var payments = await _paymentMethodService.GetPaymentsAsync(GetCurrentUserId(), cancellationToken);
             return Ok(ApiResponse<IReadOnlyList<UserPaymentDto>>.Ok(payments));
         }
 
@@ -123,7 +130,7 @@ namespace SpaceShopper.API.Controllers.Users
         [Authorize]
         public async Task<IActionResult> GetPaymentById([FromRoute] Guid id, CancellationToken cancellationToken)
         {
-            var payment = await _userService.GetPaymentByIdAsync(GetCurrentUserId(), id, cancellationToken);
+            var payment = await _paymentMethodService.GetPaymentByIdAsync(GetCurrentUserId(), id, cancellationToken);
             return Ok(ApiResponse<UserPaymentDto>.Ok(payment));
         }
 
@@ -131,7 +138,7 @@ namespace SpaceShopper.API.Controllers.Users
         [Authorize]
         public async Task<IActionResult> AddPayment([FromBody] AddPaymentRequest request, CancellationToken cancellationToken)
         {
-            var payment = await _userService.AddPaymentAsync(GetCurrentUserId(), request, cancellationToken);
+            var payment = await _paymentMethodService.AddPaymentAsync(GetCurrentUserId(), request, cancellationToken);
             return Ok(ApiResponse<UserPaymentDto>.Ok(payment));
         }
 
@@ -139,7 +146,7 @@ namespace SpaceShopper.API.Controllers.Users
         [Authorize]
         public async Task<IActionResult> EditPayment([FromRoute] Guid id, [FromBody] EditPaymentRequest request, CancellationToken cancellationToken)
         {
-            var payment = await _userService.EditPaymentAsync(GetCurrentUserId(), id, request, cancellationToken);
+            var payment = await _paymentMethodService.EditPaymentAsync(GetCurrentUserId(), id, request, cancellationToken);
             return Ok(ApiResponse<UserPaymentDto>.Ok(payment));
         }
 
@@ -147,7 +154,7 @@ namespace SpaceShopper.API.Controllers.Users
         [Authorize]
         public async Task<IActionResult> RemovePayment([FromRoute] Guid id, CancellationToken cancellationToken)
         {
-            await _userService.RemovePaymentAsync(GetCurrentUserId(), id, cancellationToken);
+            await _paymentMethodService.RemovePaymentAsync(GetCurrentUserId(), id, cancellationToken);
             return Ok(ApiResponse<object>.Ok(new { deleted = true }));
         }
 
@@ -155,7 +162,7 @@ namespace SpaceShopper.API.Controllers.Users
         [Authorize]
         public async Task<IActionResult> GetWishlist(CancellationToken cancellationToken)
         {
-            var items = await _userService.GetWishlistAsync(GetCurrentUserId(), cancellationToken);
+            var items = await _wishlistService.GetWishlistAsync(GetCurrentUserId(), cancellationToken);
             return Ok(ApiResponse<IReadOnlyList<WishlistItemDto>>.Ok(items));
         }
 
@@ -163,7 +170,7 @@ namespace SpaceShopper.API.Controllers.Users
         [Authorize]
         public async Task<IActionResult> AddToWishlist([FromRoute] Guid productId, CancellationToken cancellationToken)
         {
-            var item = await _userService.AddWishlistAsync(GetCurrentUserId(), productId, cancellationToken);
+            var item = await _wishlistService.AddWishlistAsync(GetCurrentUserId(), productId, cancellationToken);
             return Ok(ApiResponse<WishlistItemDto>.Ok(item));
         }
 
@@ -171,7 +178,7 @@ namespace SpaceShopper.API.Controllers.Users
         [Authorize]
         public async Task<IActionResult> RemoveFromWishlist([FromRoute] Guid productId, CancellationToken cancellationToken)
         {
-            await _userService.RemoveWishlistAsync(GetCurrentUserId(), productId, cancellationToken);
+            await _wishlistService.RemoveWishlistAsync(GetCurrentUserId(), productId, cancellationToken);
             return Ok(ApiResponse<object>.Ok(new { deleteCount = 1 }));
         }
 

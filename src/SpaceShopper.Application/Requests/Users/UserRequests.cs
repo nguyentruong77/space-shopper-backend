@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace SpaceShopper.Application.Requests.Users
@@ -89,5 +90,11 @@ namespace SpaceShopper.Application.Requests.Users
         public string? Expired { get; set; }
         public string? Type { get; set; }
         public bool? IsDefault { get; set; }
+    }
+
+    public sealed class UpdateCartQuantityRequest
+    {
+        [Range(0, int.MaxValue)]
+        public int Quantity { get; set; }
     }
 }
