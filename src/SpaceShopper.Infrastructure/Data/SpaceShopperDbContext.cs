@@ -2,6 +2,8 @@
 using SpaceShopper.Domain.Entities.Catalog;
 using SpaceShopper.Domain.Entities.Contents;
 using SpaceShopper.Domain.Entities.Orders;
+using SpaceShopper.Domain.Entities.Promotions;
+using SpaceShopper.Domain.Entities.Shipping;
 using SpaceShopper.Domain.Entities.Users;
 
 namespace SpaceShopper.Infrastructure.Data
@@ -19,7 +21,12 @@ namespace SpaceShopper.Infrastructure.Data
         public DbSet<OrderDetail> OrderDetails { get; set; }
         public DbSet<OrderPromotion> OrderPromotions { get; set; }
         public DbSet<OrderShipping> OrderShippings { get; set; }
+
+        // Promotions entities
         public DbSet<Promotion> Promotions { get; set; }
+
+        // Shipping entities
+        public DbSet<MethodShipping> MethodShippings { get; set; }
 
         // Users entities
         public DbSet<User> Users { get; set; }
@@ -140,11 +147,20 @@ namespace SpaceShopper.Infrastructure.Data
                 entity.ToTable("OrderShipping");
                 entity.HasKey(e => e.OrderId);
             });
+            #endregion
 
-            // Promotion entity configuration
+            #region Promotions configuration
             modelBuilder.Entity<Promotion>(entity =>
             {
                 entity.ToTable("Promotion");
+                entity.HasKey(e => e.Id);
+            });
+            #endregion
+
+            #region Shipping configuration
+            modelBuilder.Entity<MethodShipping>(entity =>
+            {
+                entity.ToTable("MethodShipping");
                 entity.HasKey(e => e.Id);
             });
             #endregion

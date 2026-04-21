@@ -8,20 +8,24 @@ using SpaceShopper.Application.Common.Settings;
 using SpaceShopper.Application.Interfaces.IRepositories.Catalog;
 using SpaceShopper.Application.Interfaces.IRepositories.Common;
 using SpaceShopper.Application.Interfaces.IRepositories.Users;
+using SpaceShopper.Application.Interfaces.IRepositories.Shipping;
 using SpaceShopper.Application.Interfaces.Iservices.Catalog;
 using SpaceShopper.Application.Interfaces.Iservices.Auth;
 using SpaceShopper.Application.Interfaces.Iservices.Common;
+using SpaceShopper.Application.Interfaces.Iservices.Shipping;
 using SpaceShopper.Application.Interfaces.Iservices.Users;
 using SpaceShopper.Application.Interfaces.Security;
 using SpaceShopper.Application.Services;
 using SpaceShopper.Application.Services.Catalog;
 using SpaceShopper.Application.Services.Auth;
+using SpaceShopper.Application.Services.Shipping;
 using SpaceShopper.Application.Services.Users;
 using SpaceShopper.Infrastructure.Caching.Extensions;
 using SpaceShopper.Infrastructure.Data;
 using SpaceShopper.Infrastructure.Repositories.Catalog;
 using SpaceShopper.Infrastructure.Repositories.Common;
 using SpaceShopper.Infrastructure.Repositories.Users;
+using SpaceShopper.Infrastructure.Repositories.Shipping;
 using SpaceShopper.Infrastructure.Security;
 using SpaceShopper.Infrastructure.Services.Email;
 
@@ -85,6 +89,7 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IMethodShippingRepository, MethodShippingRepository>();
 
 
 // DI for services application
@@ -96,6 +101,7 @@ builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<IUserPaymentMethodService, UserPaymentMethodService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IShippingMethodService, ShippingMethodService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<ICacheKeyHashService, CacheKeyHashService>();

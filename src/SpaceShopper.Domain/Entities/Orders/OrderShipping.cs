@@ -14,7 +14,10 @@ namespace SpaceShopper.Domain.Entities.Orders
         public string Email { get; set; }
         public string Province { get; set; }
         public string District { get; set; }
-        public string ShippingMethod { get; set; }
+
+        public string ShippingMethodCode { get; set; }
+        public string ShippingMethodName { get; set; }
+
         public decimal ShippingPrice { get; set; }
         public string Address { get; set; }
     }

@@ -472,7 +472,7 @@ namespace SpaceShopper.Infrastructure.Migrations
                     b.ToTable("OrderShipping", "spaceshopper");
                 });
 
-            modelBuilder.Entity("SpaceShopper.Domain.Entities.Orders.Promotion", b =>
+            modelBuilder.Entity("SpaceShopper.Domain.Entities.Promotions.Promotion", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
