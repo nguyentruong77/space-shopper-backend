@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SpaceShopper.Infrastructure.Data;
@@ -11,9 +12,11 @@ using SpaceShopper.Infrastructure.Data;
 namespace SpaceShopper.Infrastructure.Migrations
 {
     [DbContext(typeof(SpaceShopperDbContext))]
-    partial class SpaceShopperDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260422080701_AddCheckoutPromotionTargetsAndOrderPromotionRefactor")]
+    partial class AddCheckoutPromotionTargetsAndOrderPromotionRefactor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

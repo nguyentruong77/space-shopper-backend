@@ -110,5 +110,18 @@ namespace SpaceShopper.Infrastructure.Repositories.Catalog
                 .Where(p => ids.Contains(p.Id))
                 .ToListAsync(cancellationToken);
         }
+
+        public async Task<IReadOnlyList<Product>> GetByIdsForCheckoutAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default)
+        {
+            if (ids.Count == 0)
+            {
+                return Array.Empty<Product>();
+            }
+
+            return await context.Available<Product>(false)
+                .Include(p => p.ProductStock)
+                .Where(p => ids.Contains(p.Id))
+                .ToListAsync(cancellationToken);
+        }
     }
 }

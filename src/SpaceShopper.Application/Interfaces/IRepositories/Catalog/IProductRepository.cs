@@ -13,5 +13,6 @@ namespace SpaceShopper.Application.Interfaces.IRepositories.Catalog
         Task<IReadOnlyList<Product>> GetByIdsForWishlistAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<Product>> GetByIdsForCartAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<Product>> GetByIdsForCheckoutAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default);
     }
 }

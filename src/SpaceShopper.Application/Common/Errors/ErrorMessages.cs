@@ -52,6 +52,17 @@ namespace SpaceShopper.Application.Common.Errors
             public const string InsufficientStock = "Insufficient stock for the requested quantity.";
         }
 
+        public static class Checkout
+        {
+            public const string ShippingMethodNotFound = "Shipping method is invalid or inactive.";
+            public const string ShippingAddressRequired = "Shipping address is required.";
+            public const string ShippingAddressNotFound = "Shipping address is invalid for current user.";
+            public const string InvalidOrderPromotionCode = "Order promotion code is invalid for product discount.";
+            public const string InvalidShippingPromotionCode = "Shipping promotion code is invalid for shipping discount.";
+            public const string DuplicatePromotionType = "Duplicate promotion type in one checkout request is not allowed.";
+            public const string EmptySelection = "At least one cart item must be selected for checkout.";
+        }
+
         public static class Common
         {
             public const string ValidationFailed = "One or more validation errors occurred.";

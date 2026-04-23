@@ -15,6 +15,7 @@ namespace SpaceShopper.Application.Interfaces.IRepositories.Users
         Task<User?> GetByIdWithWishlistAsync(Guid id, bool asNoTracking, CancellationToken cancellationToken = default);
 
         Task<User?> GetByIdWithCartAsync(Guid id, bool asNoTracking, CancellationToken cancellationToken = default);
+        Task<User?> GetByIdWithCheckoutDataAsync(Guid id, bool asNoTracking, CancellationToken cancellationToken = default);
     }
 }
 

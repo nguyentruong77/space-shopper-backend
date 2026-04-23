@@ -115,9 +115,10 @@ namespace SpaceShopper.Infrastructure.Data
                       .HasForeignKey(e => e.OrderId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne(e => e.OrderPromotion).WithOne()
-                        .HasForeignKey<OrderPromotion>(e => e.OrderId)
-                        .OnDelete(DeleteBehavior.Cascade);
+                entity.HasMany(e => e.OrderPromotions)
+                      .WithOne(e => e.Order)
+                      .HasForeignKey(e => e.OrderId)
+                      .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(e => e.OrderShipping).WithOne()
                         .HasForeignKey<OrderShipping>(e => e.OrderId)
@@ -138,7 +139,8 @@ namespace SpaceShopper.Infrastructure.Data
             modelBuilder.Entity<OrderPromotion>(entity =>
             {
                 entity.ToTable("OrderPromotion");
-                entity.HasKey(e => e.OrderId);
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => new { e.OrderId, e.IsShippingDiscount }).IsUnique();
             });
 
             // OrderShipping entity configuration

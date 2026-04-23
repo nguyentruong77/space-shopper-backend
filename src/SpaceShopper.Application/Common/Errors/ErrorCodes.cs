@@ -35,6 +35,17 @@ namespace SpaceShopper.Application.Common.Errors
             public const string InsufficientStock = "CRT-400-001";
         }
 
+        public static class Checkout
+        {
+            public const string ShippingMethodNotFound = "CHK-404-001";
+            public const string ShippingAddressRequired = "CHK-400-001";
+            public const string ShippingAddressNotFound = "CHK-404-002";
+            public const string InvalidOrderPromotionCode = "CHK-400-002";
+            public const string InvalidShippingPromotionCode = "CHK-400-003";
+            public const string DuplicatePromotionType = "CHK-400-004";
+            public const string EmptySelection = "CHK-400-005";
+        }
+
         public static class Application
         {
             public const string Validation = "APP-400-001";

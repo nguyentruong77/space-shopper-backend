@@ -18,5 +18,6 @@ namespace SpaceShopper.Domain.Entities.Promotions
         /// </summary>
         public string Type { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
+        public bool IsShippingDiscount { get; set; } = false;
     }
 }

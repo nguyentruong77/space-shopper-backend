@@ -30,5 +30,14 @@ namespace SpaceShopper.Infrastructure.Repositories.Shipping
                 .ThenBy(x => x.Code)
                 .ToListAsync(cancellationToken);
         }
+
+        public async Task<MethodShipping?> GetActiveByCodeAsync(string code, CancellationToken cancellationToken = default)
+        {
+            var normalizedCode = code.Trim().ToUpperInvariant();
+
+            return await _context.MethodShippings
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.IsActive && x.Code.ToUpper() == normalizedCode, cancellationToken);
+        }
     }
 }
