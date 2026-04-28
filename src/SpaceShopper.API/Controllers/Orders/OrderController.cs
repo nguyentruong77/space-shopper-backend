@@ -1,9 +1,7 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SpaceShopper.API.Controllers.Common;
 using SpaceShopper.API.Models;
-using SpaceShopper.Application.Common.Errors;
-using SpaceShopper.Application.Common.Exceptions;
 using SpaceShopper.Application.Dtos.Common;
 using SpaceShopper.Application.Dtos.Orders;
 using SpaceShopper.Application.Interfaces.Iservices.Orders;
@@ -13,7 +11,7 @@ namespace SpaceShopper.API.Controllers.Orders
 {
     [ApiController]
     [Route("api/v1/orders")]
-    public sealed class OrderController(IOrderService orderService) : ControllerBase
+    public sealed class OrderController(IOrderService orderService) : BaseController
     {
         private readonly IOrderService _orderService = orderService;
 
@@ -65,17 +63,6 @@ namespace SpaceShopper.API.Controllers.Orders
         {
             var result = await _orderService.GetOrderCountByStatusAsync(GetCurrentUserId(), query, cancellationToken);
             return Ok(ApiResponse<OrderStatusCountDto>.Ok(result));
-        }
-
-        private Guid GetCurrentUserId()
-        {
-            var userId = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userId, out var id))
-            {
-                throw new UnauthorizedException(ErrorCodes.Auth.Unauthorized, ErrorMessages.Auth.Unauthorized);
-            }
-
-            return id;
         }
     }
 }

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using SpaceShopper.API.Controllers.Common;
 using SpaceShopper.API.Models;
 using SpaceShopper.Application.Dtos.Auth;
 using SpaceShopper.Application.Dtos.Users;
@@ -15,7 +15,7 @@ namespace SpaceShopper.API.Controllers.Users
         IUserService userService,
         IAddressService addressService,
         IUserPaymentMethodService paymentMethodService,
-        IWishlistService wishlistService) : ControllerBase
+        IWishlistService wishlistService) : BaseController
     {
         private readonly IUserService _userService = userService;
         private readonly IAddressService _addressService = addressService;
@@ -180,19 +180,6 @@ namespace SpaceShopper.API.Controllers.Users
         {
             await _wishlistService.RemoveWishlistAsync(GetCurrentUserId(), productId, cancellationToken);
             return Ok(ApiResponse<object>.Ok(new { deleteCount = 1 }));
-        }
-
-        private Guid GetCurrentUserId()
-        {
-            var userId = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userId, out var id))
-            {
-                throw new SpaceShopper.Application.Common.Exceptions.UnauthorizedException(
-                    SpaceShopper.Application.Common.Errors.ErrorCodes.Auth.Unauthorized,
-                    SpaceShopper.Application.Common.Errors.ErrorMessages.Auth.Unauthorized);
-            }
-
-            return id;
         }
     }
 }
