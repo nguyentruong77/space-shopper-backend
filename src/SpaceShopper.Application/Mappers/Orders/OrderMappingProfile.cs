@@ -8,6 +8,29 @@ namespace SpaceShopper.Application.Mappers.Orders
     {
         public OrderMappingProfile()
         {
+            CreateMap<OrderShipping, OrderShippingDto>()
+                .ForMember(d => d.ShippingMethod, opt => opt.MapFrom(s => s.ShippingMethodCode));
+
+            CreateMap<OrderDetail, OrderListItemDto>();
+
+            CreateMap<Order, OrderListDto>()
+                .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString().ToLowerInvariant()))
+                .ForMember(d => d.Shipping, opt => opt.MapFrom(s => s.OrderShipping))
+                .ForMember(d => d.Items, opt => opt.MapFrom(s => s.OrderDetails));
+
+            CreateMap<Order, OrderDetailDto>()
+                .IncludeBase<Order, OrderListDto>()
+                .ForMember(d => d.AppliedOrderPromotionCode, opt => opt.MapFrom(s =>
+                    s.OrderPromotions
+                        .Where(p => !p.IsShippingDiscount)
+                        .Select(p => p.PromotionCode)
+                        .FirstOrDefault()))
+                .ForMember(d => d.AppliedShippingPromotionCode, opt => opt.MapFrom(s =>
+                    s.OrderPromotions
+                        .Where(p => p.IsShippingDiscount)
+                        .Select(p => p.PromotionCode)
+                        .FirstOrDefault()));
+
             CreateMap<Order, CheckoutResultDto>()
                 .ForMember(d => d.OrderId, opt => opt.MapFrom(s => s.Id))
                 .ForMember(d => d.ItemsSubtotal, opt => opt.MapFrom(s => s.SubTotal))

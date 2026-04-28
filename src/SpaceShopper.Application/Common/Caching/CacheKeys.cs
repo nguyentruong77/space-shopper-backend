@@ -69,5 +69,11 @@ namespace SpaceShopper.Application.Common.Caching
 
         public static string CatalogCategoryDetail(Guid id)
             => $"catalog{Separator}categories{Separator}{id}";
+
+        public static string OrdersList(Guid userId, string queryHash)
+            => $"orders{Separator}{userId}{Separator}list{Separator}{queryHash}";
+
+        public static string OrdersCount(Guid userId, string status)
+            => $"orders{Separator}{userId}{Separator}count{Separator}{status}";
     }
 }

@@ -1,7 +1,11 @@
 using AutoMapper;
+using Microsoft.Extensions.Logging;
+using SpaceShopper.Application.Common.Caching;
 using SpaceShopper.Application.Common.Errors;
 using SpaceShopper.Application.Common.Exceptions;
+using SpaceShopper.Application.Dtos.Common;
 using SpaceShopper.Application.Dtos.Orders;
+using SpaceShopper.Application.Interfaces.Caching;
 using SpaceShopper.Application.Interfaces.IRepositories.Catalog;
 using SpaceShopper.Application.Interfaces.IRepositories.Common;
 using SpaceShopper.Application.Interfaces.IRepositories.Orders;
@@ -9,6 +13,7 @@ using SpaceShopper.Application.Interfaces.IRepositories.Promotions;
 using SpaceShopper.Application.Interfaces.IRepositories.Shipping;
 using SpaceShopper.Application.Interfaces.IRepositories.Users;
 using SpaceShopper.Application.Interfaces.Iservices.Orders;
+using SpaceShopper.Application.Interfaces.Security;
 using SpaceShopper.Application.Requests.Orders;
 using SpaceShopper.Domain.Entities.Catalog;
 using SpaceShopper.Domain.Entities.Orders;
@@ -26,15 +31,23 @@ namespace SpaceShopper.Application.Services.Orders
         IPromotionRepository promotionRepository,
         IOrderRepository orderRepository,
         IUnitOfWork unitOfWork,
-        IMapper mapper) : IOrderService
+        ICacheService cacheService,
+        ICacheKeyHashService cacheKeyHashService,
+        IMapper mapper,
+        ILogger<OrderService> logger) : IOrderService
     {
+        private static readonly TimeSpan OrdersListCacheTtl = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan OrdersCountCacheTtl = TimeSpan.FromSeconds(30);
         private readonly IUserRepository _userRepository = userRepository;
         private readonly IProductRepository _productRepository = productRepository;
         private readonly IMethodShippingRepository _methodShippingRepository = methodShippingRepository;
         private readonly IPromotionRepository _promotionRepository = promotionRepository;
         private readonly IOrderRepository _orderRepository = orderRepository;
         private readonly IUnitOfWork _unitOfWork = unitOfWork;
+        private readonly ICacheService _cacheService = cacheService;
+        private readonly ICacheKeyHashService _cacheKeyHashService = cacheKeyHashService;
         private readonly IMapper _mapper = mapper;
+        private readonly ILogger<OrderService> _logger = logger;
 
         public async Task<PreCheckoutDto> PreCheckoutAsync(Guid userId, PreCheckoutRequest request, CancellationToken cancellationToken = default)
         {
@@ -77,6 +90,7 @@ namespace SpaceShopper.Application.Services.Orders
 
                 await _orderRepository.AddEntityAsync(order, cancellationToken);
                 await _unitOfWork.CommitAsync(cancellationToken);
+                await InvalidateOrderCountCacheAsync(userId, cancellationToken);
 
                 return _mapper.Map<CheckoutResultDto>(order);
             }
@@ -85,6 +99,160 @@ namespace SpaceShopper.Application.Services.Orders
                 await _unitOfWork.RollbackAsync(cancellationToken);
                 throw;
             }
+        }
+
+        public async Task<PagedResult<OrderListDto>> GetOrdersAsync(
+            Guid userId,
+            OrderFilterRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            await EnsureUserExistsAsync(userId, cancellationToken);
+            ValidatePaging(request.Page, request.PageSize);
+
+            var (hasStatusFilter, parsedStatus, normalizedStatus) = ParseStatus(request.Status, required: false);
+            var cacheKey = CacheKeys.OrdersList(userId, _cacheKeyHashService.Hash(request.ToString()));
+            var cacheUnavailable = false;
+
+            try
+            {
+                var (cacheHit, cachedValue) = await _cacheService.TryGetValueAsync<PagedResult<OrderListDto>>(cacheKey, cancellationToken);
+                if (cacheHit && cachedValue is not null)
+                {
+                    _logger.LogInformation(
+                        "Order list cache hit for user {UserId}. Status: {Status}, Page: {Page}, PageSize: {PageSize}",
+                        userId,
+                        normalizedStatus ?? "all",
+                        request.Page,
+                        request.PageSize);
+                    return cachedValue;
+                }
+            }
+            catch (Exception ex)
+            {
+                cacheUnavailable = true;
+                _logger.LogWarning(ex, "Order list cache unavailable for user {UserId}", userId);
+            }
+
+            var (items, totalItems) = await _orderRepository.GetOrdersAsync(
+                userId,
+                hasStatusFilter ? parsedStatus : null,
+                request.Page,
+                request.PageSize,
+                cancellationToken);
+
+            var totalPages = totalItems == 0 ? 0 : (int)Math.Ceiling(totalItems / (double)request.PageSize);
+            var result = new PagedResult<OrderListDto>
+            {
+                Items = _mapper.Map<IReadOnlyList<OrderListDto>>(items),
+                CurrentPage = request.Page,
+                PageSize = request.PageSize,
+                TotalItems = totalItems,
+                TotalPages = totalPages,
+                HasNextPage = request.Page < totalPages,
+                HasPreviousPage = request.Page > 1
+            };
+
+            _logger.LogInformation(
+                "Get orders completed for user {UserId}. Status: {Status}, Page: {Page}, PageSize: {PageSize}, TotalItems: {TotalItems}",
+                userId,
+                normalizedStatus ?? "all",
+                request.Page,
+                request.PageSize,
+                totalItems);
+
+            if (!cacheUnavailable)
+            {
+                try
+                {
+                    await _cacheService.SetAsync(cacheKey, result, OrdersListCacheTtl, cancellationToken: cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to set order list cache for user {UserId}", userId);
+                }
+            }
+
+            return result;
+        }
+
+        public async Task<OrderDetailDto> GetOrderDetailAsync(
+            Guid userId,
+            Guid orderId,
+            CancellationToken cancellationToken = default)
+        {
+            await EnsureUserExistsAsync(userId, cancellationToken);
+            var order = await _orderRepository.GetDetailByIdAsync(orderId, cancellationToken);
+            if (order is null)
+            {
+                _logger.LogWarning(
+                    "User {UserId} requested a non-existing order {OrderId}",
+                    userId,
+                    orderId);
+                throw new NotFoundException(ErrorCodes.Application.NotFound, ErrorMessages.Order.OrderNotFound);
+            }
+
+            if (order.UserId != userId)
+            {
+                _logger.LogWarning(
+                    "User {UserId} attempted to access order {OrderId} owned by another user",
+                    userId,
+                    orderId);
+                throw new NotFoundException(ErrorCodes.Application.NotFound, ErrorMessages.Order.OrderNotFound);
+            }
+
+            return _mapper.Map<OrderDetailDto>(order);
+        }
+
+        public async Task<OrderStatusCountDto> GetOrderCountByStatusAsync(
+            Guid userId,
+            OrderStatusCountQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            await EnsureUserExistsAsync(userId, cancellationToken);
+            var (_, parsedStatus, normalizedStatus) = ParseStatus(query.Status, required: true);
+            var cacheKey = CacheKeys.OrdersCount(userId, normalizedStatus!);
+
+            try
+            {
+                var (cacheHit, cachedValue) = await _cacheService.TryGetValueAsync<OrderStatusCountDto>(cacheKey, cancellationToken);
+                if (cacheHit && cachedValue is not null)
+                {
+                    _logger.LogInformation(
+                        "Order count cache hit for user {UserId}. Status: {Status}, Count: {Count}",
+                        userId,
+                        cachedValue.Status,
+                        cachedValue.Count);
+                    return cachedValue;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Order count cache unavailable for user {UserId}, status {Status}", userId, normalizedStatus);
+            }
+
+            var count = await _orderRepository.CountByStatusAsync(userId, parsedStatus, cancellationToken);
+            var result = new OrderStatusCountDto
+            {
+                Status = normalizedStatus!,
+                Count = count
+            };
+
+            _logger.LogInformation(
+                "Order count for user {UserId}. Status: {Status}, Count: {Count}",
+                userId,
+                result.Status,
+                result.Count);
+
+            try
+            {
+                await _cacheService.SetAsync(cacheKey, result, OrdersCountCacheTtl, cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to set order count cache for user {UserId}, status {Status}", userId, normalizedStatus);
+            }
+
+            return result;
         }
 
         private async Task<CheckoutContext> BuildCheckoutContextAsync(
@@ -265,6 +433,72 @@ namespace SpaceShopper.Application.Services.Orders
         private static string? NormalizeCode(string? code)
         {
             return string.IsNullOrWhiteSpace(code) ? null : code.Trim();
+        }
+
+        private static void ValidatePaging(int page, int pageSize)
+        {
+            if (page <= 0 || pageSize <= 0)
+            {
+                throw new ValidationException(ErrorCodes.Application.Validation, "Page and pageSize must be greater than zero.");
+            }
+        }
+
+        private static (bool HasValue, OrderStatus ParsedStatus, string? NormalizedStatus) ParseStatus(string? rawStatus, bool required)
+        {
+            if (string.IsNullOrWhiteSpace(rawStatus))
+            {
+                if (required)
+                {
+                    throw new ValidationException(ErrorCodes.Application.Validation, "status is required.");
+                }
+
+                return (false, default, null);
+            }
+
+            var normalized = rawStatus.Trim().ToLowerInvariant();
+            normalized = normalized switch
+            {
+                "confirm" => "confirmed",
+                _ => normalized
+            };
+
+            var parsed = normalized switch
+            {
+                "pending" => OrderStatus.Pending,
+                "confirmed" => OrderStatus.Confirmed,
+                "shipping" => OrderStatus.Shipping,
+                "finished" => OrderStatus.Finished,
+                "cancelled" => OrderStatus.Cancelled,
+                _ => throw new ValidationException(
+                    ErrorCodes.Application.Validation,
+                    "status is invalid. Allowed values: pending, confirmed, shipping, finished, cancelled.")
+            };
+
+            return (true, parsed, normalized);
+        }
+
+        private async Task InvalidateOrderCountCacheAsync(Guid userId, CancellationToken cancellationToken)
+        {
+            foreach (var status in new[] { "pending", "confirmed", "shipping", "finished", "cancelled" })
+            {
+                try
+                {
+                    await _cacheService.RemoveAsync(CacheKeys.OrdersCount(userId, status), cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to invalidate order count cache for user {UserId}, status {Status}", userId, status);
+                }
+            }
+        }
+
+        private async Task EnsureUserExistsAsync(Guid userId, CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+            if (user is null)
+            {
+                throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
+            }
         }
 
         private static PreCheckoutDto ToPreCheckoutDto(CheckoutContext context)
