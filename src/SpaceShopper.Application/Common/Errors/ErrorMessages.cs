@@ -7,6 +7,16 @@ namespace SpaceShopper.Application.Common.Errors
             public const string ProductNotFound = "Product not found.";
         }
 
+        public static class Review
+        {
+            public const string InvalidSortBy = "SortBy is invalid. Allowed values: latest, rating_desc, rating_asc.";
+            public const string InvalidPaging = "Page and PageSize must be greater than 0.";
+            public const string ProductNotPurchased = "You can only review from a finished order, and this product must have a purchase line not yet reviewed.";
+            public const string DuplicateReview = "This order line has already been reviewed.";
+            public const string RatingOutOfRange = "Rating must be in range 1..5.";
+            public const string CommentRequired = "Comment is required.";
+        }
+
         public static class Wishlist
         {
             public const string ItemNotFound = "Product is not in the wishlist.";

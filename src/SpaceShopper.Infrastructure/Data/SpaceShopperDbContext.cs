@@ -131,6 +131,9 @@ namespace SpaceShopper.Infrastructure.Data
                 entity.ToTable("OrderDetail");
                 entity.HasKey(e => new { e.ProductId, e.OrderId });
 
+                entity.Property(e => e.IsReviewed)
+                    .HasDefaultValue(false);
+
                 // Foreign key relationship
 
             });

@@ -102,6 +102,7 @@ builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
 
 // DI for services application
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();

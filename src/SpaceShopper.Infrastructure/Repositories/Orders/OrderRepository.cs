@@ -58,5 +58,23 @@ namespace SpaceShopper.Infrastructure.Repositories.Orders
                 .Where(o => !o.IsDeleted && o.UserId == userId && o.Status == status)
                 .CountAsync(cancellationToken);
         }
+
+        public async Task<OrderDetail?> GetFirstReviewableOrderDetailAsync(
+            Guid userId,
+            Guid productId,
+            CancellationToken cancellationToken = default)
+        {
+            return await (
+                from d in _dbContext.OrderDetails
+                join o in _dbContext.Orders on d.OrderId equals o.Id
+                where d.ProductId == productId
+                      && !d.IsReviewed
+                      && !o.IsDeleted
+                      && o.UserId == userId
+                      && o.Status == OrderStatus.Finished
+                orderby o.CreatedOn
+                select d
+            ).FirstOrDefaultAsync(cancellationToken);
+        }
     }
 }

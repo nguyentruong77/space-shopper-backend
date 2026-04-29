@@ -35,6 +35,16 @@ namespace SpaceShopper.Application.Common.Errors
             public const string InsufficientStock = "CRT-400-001";
         }
 
+        public static class Review
+        {
+            public const string InvalidSortBy = "REV-400-001";
+            public const string InvalidPaging = "REV-400-002";
+            public const string ProductNotPurchased = "REV-422-001";
+            public const string DuplicateReview = "REV-409-001";
+            public const string RatingOutOfRange = "REV-400-003";
+            public const string CommentRequired = "REV-400-004";
+        }
+
         public static class Checkout
         {
             public const string ShippingMethodNotFound = "CHK-404-001";

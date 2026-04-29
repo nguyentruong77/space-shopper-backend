@@ -16,5 +16,10 @@ namespace SpaceShopper.Domain.Entities.Orders
         public int ReviewCount { get; set; }
         public string? ThumbnailUrl { get; set; }
         public string? Slug { get; set; }
+
+        /// <summary>
+        /// True when the buyer has submitted a product review for this order line (finished order + product).
+        /// </summary>
+        public bool IsReviewed { get; set; }
     }
 }

@@ -14,5 +14,10 @@ namespace SpaceShopper.Application.Interfaces.IRepositories.Orders
             CancellationToken cancellationToken = default);
         Task<Order?> GetDetailByIdAsync(Guid orderId, CancellationToken cancellationToken = default);
         Task<int> CountByStatusAsync(Guid userId, OrderStatus status, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Oldest finished order line for this product that is not yet marked reviewed (tracked entity).
+        /// </summary>
+        Task<OrderDetail?> GetFirstReviewableOrderDetailAsync(Guid userId, Guid productId, CancellationToken cancellationToken = default);
     }
 }

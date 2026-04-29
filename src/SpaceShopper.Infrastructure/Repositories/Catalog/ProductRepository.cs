@@ -123,5 +123,14 @@ namespace SpaceShopper.Infrastructure.Repositories.Catalog
                 .Where(p => ids.Contains(p.Id))
                 .ToListAsync(cancellationToken);
         }
+
+        public async Task<Product?> GetByIdWithReviewsAsync(Guid id, bool asNoTracking, CancellationToken cancellationToken = default)
+        {
+            var query = context.Available<Product>(asNoTracking)
+                .Include(p => p.ProductReviews)
+                .Where(p => p.Id == id);
+
+            return await query.FirstOrDefaultAsync(cancellationToken);
+        }
     }
 }
