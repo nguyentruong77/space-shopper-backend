@@ -67,5 +67,13 @@ namespace SpaceShopper.Application.Common.Errors
         {
             public const string Unknown = "INF-500-001";
         }
+
+        public static class File
+        {
+            public const string MissingOrEmpty = "FIL-400-001";
+            public const string SizeExceeded = "FIL-400-002";
+            public const string ExtensionNotAllowed = "FIL-400-003";
+            public const string ContentSignatureMismatch = "FIL-400-004";
+        }
     }
 }

@@ -28,6 +28,8 @@ namespace SpaceShopper.Application.Services.Users
         IEmailService emailService,
         IMapper mapper,
         IOptions<JwtOptions> jwtOptions,
+        IOptions<StorageOptions> storageOptions,
+        IFileService fileService,
         ILogger<UserService> logger) : IUserService
     {
         private readonly IUserRepository _userRepository = userRepository;
@@ -38,6 +40,8 @@ namespace SpaceShopper.Application.Services.Users
         private readonly IEmailService _emailService = emailService;
         private readonly IMapper _mapper = mapper;
         private readonly JwtOptions _jwtOptions = jwtOptions.Value;
+        private readonly StorageOptions _storageOptions = storageOptions.Value;
+        private readonly IFileService _fileService = fileService;
         private readonly ILogger<UserService> _logger = logger;
 
         public async Task RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
@@ -179,16 +183,91 @@ namespace SpaceShopper.Application.Services.Users
         {
             var user = await _userRepository.GetByIdAsync(userId, cancellationToken)
                 ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-            return _mapper.Map<UserInfoDto>(user);
+            var dto = _mapper.Map<UserInfoDto>(user);
+            dto.Avatar = BuildAvatarUrl(user.AvatarObjectKey, _storageOptions);
+            return dto;
         }
 
         public async Task<UserInfoDto> UpdateInfoAsync(Guid userId, UpdateUserInfoRequest request, CancellationToken cancellationToken = default)
         {
             var user = await _userRepository.GetByIdAsync(userId, cancellationToken)
                 ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
-            user.UpdateProfile(request.Name, request.Phone, request.Avatar, request.Fb, request.BirthDay, request.Gender);
+            // Avatar must be updated via the upload flow (UserService.UpdateAvatarAsync),
+            // so we intentionally ignore request.Avatar here.
+            user.UpdateProfile(request.Name, request.Phone, avatarObjectKey: null, request.Fb, request.BirthDay, request.Gender);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return _mapper.Map<UserInfoDto>(user);
+            var dto = _mapper.Map<UserInfoDto>(user);
+            dto.Avatar = BuildAvatarUrl(user.AvatarObjectKey, _storageOptions);
+            return dto;
+        }
+
+        public async Task<UserInfoDto> UpdateAvatarAsync(
+            Guid userId,
+            Stream content,
+            string fileName,
+            string? contentType,
+            long contentLength,
+            CancellationToken cancellationToken = default)
+        {
+            var user = await _userRepository.GetByIdAsync(userId, cancellationToken)
+                ?? throw new NotFoundException(ErrorCodes.User.UserNotFound, ErrorMessages.User.UserNotFound);
+
+            var upload = await _fileService.UploadAsync(
+                    content,
+                    fileName,
+                    contentType,
+                    contentLength,
+                    userId,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            user.SetAvatarObjectKey(upload.ObjectKey);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+            var dto = _mapper.Map<UserInfoDto>(user);
+            dto.Avatar = BuildAvatarUrl(user.AvatarObjectKey, _storageOptions);
+            return dto;
+        }
+
+        private static string? BuildAvatarUrl(string? avatarObjectKey, StorageOptions options)
+        {
+            if (string.IsNullOrWhiteSpace(avatarObjectKey))
+            {
+                return null;
+            }
+
+            // Backward compatibility: older rows might store a full URL.
+            if (Uri.TryCreate(avatarObjectKey, UriKind.Absolute, out var parsed) &&
+                (parsed.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+                 parsed.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)))
+            {
+                return avatarObjectKey;
+            }
+
+            var baseUrl = string.IsNullOrWhiteSpace(options.PublicBaseUrl)
+                ? string.Empty
+                : options.PublicBaseUrl;
+
+            // Allow provider-specific base URL overrides.
+            if (options.Provider?.Equals("MinIO", StringComparison.OrdinalIgnoreCase) == true &&
+                !string.IsNullOrWhiteSpace(options.MinIO.PublicBaseUrl))
+            {
+                baseUrl = options.MinIO.PublicBaseUrl;
+            }
+            else if (options.Provider?.Equals("AzureBlob", StringComparison.OrdinalIgnoreCase) == true &&
+                     !string.IsNullOrWhiteSpace(options.AzureBlob.PublicBaseUrl))
+            {
+                baseUrl = options.AzureBlob.PublicBaseUrl;
+            }
+
+            var key = avatarObjectKey.TrimStart('/').Replace('\\', '/');
+            if (string.IsNullOrWhiteSpace(baseUrl))
+            {
+                return "/" + key;
+            }
+
+            return baseUrl.TrimEnd('/') + "/" + key;
         }
 
         private static string ResolveEmail(string? email, string? usernameAlias)

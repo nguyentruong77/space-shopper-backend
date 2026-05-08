@@ -9,7 +9,10 @@ namespace SpaceShopper.Domain.Entities.Users
     {
         public string Username { get; set; }
         public string Name { get; set; }
-        public string? Avatar { get; set; }
+        /// <summary>
+        /// Object key/path trong storage (không phải URL full).
+        /// </summary>
+        public string? AvatarObjectKey { get; set; }
         public string? Fb { get; set; }
         public string PasswordHash { get; set; }
         public DateOnly BirthDay { get; set; }
@@ -55,14 +58,19 @@ namespace SpaceShopper.Domain.Entities.Users
                 !t.IsExpired(now));
         }
 
-        public void UpdateProfile(string? name, string? phone, string? avatar, string? fb, DateOnly? birthDay, string? gender)
+        public void UpdateProfile(string? name, string? phone, string? avatarObjectKey, string? fb, DateOnly? birthDay, string? gender)
         {
             if (name is not null) Name = name;
             if (phone is not null) Phone = phone;
-            if (avatar is not null) Avatar = avatar;
+            if (avatarObjectKey is not null) AvatarObjectKey = avatarObjectKey;
             if (fb is not null) Fb = fb;
             if (birthDay.HasValue) BirthDay = birthDay.Value;
             if (gender is not null) Gender = gender;
+        }
+
+        public void SetAvatarObjectKey(string? objectKey)
+        {
+            AvatarObjectKey = objectKey;
         }
 
         public void ChangePassword(string newPasswordHash)

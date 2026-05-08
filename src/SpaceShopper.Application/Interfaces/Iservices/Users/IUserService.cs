@@ -1,3 +1,4 @@
+using System.IO;
 using SpaceShopper.Application.Dtos.Auth;
 using SpaceShopper.Application.Dtos.Users;
 using SpaceShopper.Application.Requests.Users;
@@ -13,5 +14,13 @@ namespace SpaceShopper.Application.Interfaces.Iservices.Users
         Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken = default);
         Task<UserInfoDto> GetInfoAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<UserInfoDto> UpdateInfoAsync(Guid userId, UpdateUserInfoRequest request, CancellationToken cancellationToken = default);
+
+        Task<UserInfoDto> UpdateAvatarAsync(
+            Guid userId,
+            Stream content,
+            string fileName,
+            string? contentType,
+            long contentLength,
+            CancellationToken cancellationToken = default);
     }
 }

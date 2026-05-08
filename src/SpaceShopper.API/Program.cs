@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -24,6 +25,7 @@ using SpaceShopper.Application.Services.Auth;
 using SpaceShopper.Application.Services.Shipping;
 using SpaceShopper.Application.Services.Users;
 using SpaceShopper.Application.Services.Orders;
+using SpaceShopper.Application.Services.Common;
 using SpaceShopper.Infrastructure.Caching.Extensions;
 using SpaceShopper.Infrastructure.Data;
 using SpaceShopper.Infrastructure.Repositories.Catalog;
@@ -34,6 +36,7 @@ using SpaceShopper.Infrastructure.Repositories.Orders;
 using SpaceShopper.Infrastructure.Repositories.Promotions;
 using SpaceShopper.Infrastructure.Security;
 using SpaceShopper.Infrastructure.Services.Email;
+using SpaceShopper.Infrastructure.Storage;
 
 
 // using Serilog
@@ -45,6 +48,12 @@ Log.Logger = new LoggerConfiguration()
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();
+
+var maxFileBytes = builder.Configuration.GetSection(StorageOptions.SectionName).GetValue<long?>("MaxFileSizeBytes")
+                   ?? 5_242_880;
+var multipartBodyLimit = maxFileBytes + 1_048_576;
+builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = multipartBodyLimit);
+builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = multipartBodyLimit);
 
 builder.Services.AddControllers();
 
@@ -116,6 +125,8 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<ICacheKeyHashService, CacheKeyHashService>();
 builder.Services.AddScoped<IEmailService, MailKitEmailService>();
+builder.Services.AddStorageServices(builder.Configuration);
+builder.Services.AddScoped<IFileService, FileService>();
 
 builder.Services.AddHttpClient<DevService>(client =>
 {
@@ -141,6 +152,8 @@ app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();

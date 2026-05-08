@@ -77,5 +77,13 @@ namespace SpaceShopper.Application.Common.Errors
         {
             public const string ValidationFailed = "One or more validation errors occurred.";
         }
+
+        public static class File
+        {
+            public const string MissingOrEmpty = "No file was uploaded or the file is empty.";
+            public const string SizeExceeded = "The file exceeds the maximum allowed size.";
+            public const string ExtensionNotAllowed = "This file extension is not allowed.";
+            public const string ContentSignatureMismatch = "File content does not match the declared image type.";
+        }
     }
 }

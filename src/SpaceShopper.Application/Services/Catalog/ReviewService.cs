@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using SpaceShopper.Application.Common.Caching;
 using SpaceShopper.Application.Common.Errors;
 using SpaceShopper.Application.Common.Exceptions;
+using SpaceShopper.Application.Common.Settings;
 using SpaceShopper.Application.Dtos.Catalog;
 using SpaceShopper.Application.Dtos.Common;
 using SpaceShopper.Application.Interfaces.Caching;
@@ -14,6 +15,7 @@ using SpaceShopper.Application.Interfaces.Iservices.Catalog;
 using SpaceShopper.Application.Interfaces.Security;
 using SpaceShopper.Application.Requests.Catalog;
 using SpaceShopper.Domain.Entities.Catalog;
+using Microsoft.Extensions.Options;
 
 namespace SpaceShopper.Application.Services.Catalog
 {
@@ -25,6 +27,7 @@ namespace SpaceShopper.Application.Services.Catalog
         ICacheService cacheService,
         ICacheKeyHashService cacheKeyHashService,
         IMapper mapper,
+        IOptions<StorageOptions> storageOptions,
         ILogger<ReviewService> logger) : IReviewService
     {
         private static readonly TimeSpan ReviewsCacheTtl = TimeSpan.FromMinutes(3);
@@ -35,6 +38,7 @@ namespace SpaceShopper.Application.Services.Catalog
         private readonly ICacheService _cacheService = cacheService;
         private readonly ICacheKeyHashService _cacheKeyHashService = cacheKeyHashService;
         private readonly IMapper _mapper = mapper;
+        private readonly StorageOptions _storageOptions = storageOptions.Value;
         private readonly ILogger<ReviewService> _logger = logger;
 
         public async Task<ProductReviewListDto> GetReviewsByProductAsync(
@@ -156,7 +160,13 @@ namespace SpaceShopper.Application.Services.Catalog
             ProductReview review;
             try
             {
-                review = product.AddReview(userId, user.Name, user.Avatar, request.Rating, request.Comment, orderLine.OrderId);
+                review = product.AddReview(
+                    userId,
+                    user.Name,
+                    BuildAvatarUrl(user.AvatarObjectKey),
+                    request.Rating,
+                    request.Comment,
+                    orderLine.OrderId);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -187,6 +197,45 @@ namespace SpaceShopper.Application.Services.Catalog
                     TotalReviews = product.ReviewCount
                 }
             };
+        }
+
+        private string? BuildAvatarUrl(string? avatarObjectKey)
+        {
+            if (string.IsNullOrWhiteSpace(avatarObjectKey))
+            {
+                return null;
+            }
+
+            // Backward compatibility: older rows might store a full URL.
+            if (Uri.TryCreate(avatarObjectKey, UriKind.Absolute, out var parsed) &&
+                (parsed.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+                 parsed.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)))
+            {
+                return avatarObjectKey;
+            }
+
+            var baseUrl = string.IsNullOrWhiteSpace(_storageOptions.PublicBaseUrl)
+                ? string.Empty
+                : _storageOptions.PublicBaseUrl;
+
+            if (_storageOptions.Provider?.Equals("MinIO", StringComparison.OrdinalIgnoreCase) == true &&
+                !string.IsNullOrWhiteSpace(_storageOptions.MinIO.PublicBaseUrl))
+            {
+                baseUrl = _storageOptions.MinIO.PublicBaseUrl;
+            }
+            else if (_storageOptions.Provider?.Equals("AzureBlob", StringComparison.OrdinalIgnoreCase) == true &&
+                     !string.IsNullOrWhiteSpace(_storageOptions.AzureBlob.PublicBaseUrl))
+            {
+                baseUrl = _storageOptions.AzureBlob.PublicBaseUrl;
+            }
+
+            var key = avatarObjectKey.TrimStart('/').Replace('\\', '/');
+            if (string.IsNullOrWhiteSpace(baseUrl))
+            {
+                return "/" + key;
+            }
+
+            return baseUrl.TrimEnd('/') + "/" + key;
         }
 
         private static IEnumerable<ProductReview> ApplySort(IEnumerable<ProductReview> reviews, string sortBy)

@@ -1,10 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SpaceShopper.API.Controllers.Common;
 using SpaceShopper.API.Models;
+using SpaceShopper.Application.Common.Errors;
+using SpaceShopper.Application.Common.Exceptions;
 using SpaceShopper.Application.Dtos.Auth;
 using SpaceShopper.Application.Dtos.Users;
 using SpaceShopper.Application.Interfaces.Iservices.Users;
+using SpaceShopper.Application.Common.Settings;
 using SpaceShopper.Application.Requests.Users;
 
 namespace SpaceShopper.API.Controllers.Users
@@ -76,6 +80,28 @@ namespace SpaceShopper.API.Controllers.Users
         {
             var user = await _userService.UpdateInfoAsync(GetCurrentUserId(), request, cancellationToken);
             return Ok(ApiResponse<UserInfoDto>.Ok(user));
+        }
+
+        [HttpPost("avatar")]
+        [Authorize]
+        public async Task<IActionResult> UpdateAvatar([FromForm] IFormFile? file, CancellationToken cancellationToken)
+        {
+            if (file == null || file.Length == 0)
+            {
+                throw new ValidationException(ErrorCodes.File.MissingOrEmpty, ErrorMessages.File.MissingOrEmpty);
+            }
+
+            await using var stream = file.OpenReadStream();
+            var result = await _userService.UpdateAvatarAsync(
+                    GetCurrentUserId(),
+                    stream,
+                    file.FileName,
+                    file.ContentType,
+                    file.Length,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            return Ok(ApiResponse<UserInfoDto>.Ok(result));
         }
 
         [HttpGet("address")]
